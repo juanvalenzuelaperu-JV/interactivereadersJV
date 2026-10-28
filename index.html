@@ -2,1225 +2,739 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Readers · Panel de Trabajo | Jotavalenzuela</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Book Generator</title>
 <style>
-:root {
-  --azul:#004A8F; --azul-medio:#0066CC; --azul-claro:#E6F0FA;
-  --acento:#FDB913; --talento:#6366f1; --talento-claro:#8b5cf6;
-  --verde:#16a34a; --rojo:#dc2626; --texto:#1f2937; --gris:#6b7280;
-  --fondo:#f1f5f9; --blanco:#fff; --borde:#e2e8f0;
-  --sombra:0 4px 20px rgba(15,23,42,.08); --radio:14px;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fondo);color:var(--texto);line-height:1.55;min-height:100vh}
-button,input,select,textarea{font-family:inherit}
-.topbar{background:var(--blanco);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.04)}
-.topbar-inner{max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.logo-text{font-weight:800;color:var(--azul);font-size:1.05rem;line-height:1.2}
-.logo-text small{display:block;font-size:.68rem;color:var(--acento);letter-spacing:.04em;text-transform:uppercase;font-weight:700}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:50px;font-weight:600;font-size:.88rem;border:2px solid transparent;cursor:pointer;transition:.2s}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-azul{background:var(--azul-medio);color:#fff}.btn-azul:hover:not(:disabled){background:var(--azul)}
-.btn-talento{background:linear-gradient(135deg,var(--talento),var(--talento-claro));color:#fff}
-.btn-talento:hover:not(:disabled){opacity:.92}
-.btn-verde{background:var(--verde);color:#fff}.btn-verde:hover:not(:disabled){background:#15803d}
-.btn-rojo{background:#fee2e2;color:#b91c1c}.btn-rojo:hover:not(:disabled){background:#fecaca}
-.btn-ghost{background:transparent;border-color:var(--borde);color:var(--texto)}.btn-ghost:hover:not(:disabled){background:#f8fafc}
-.btn-mini{padding:7px 12px;font-size:.8rem}.btn-xs{padding:5px 10px;font-size:.75rem;border-radius:8px}
-.btn-icon{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--borde);background:#f8fafc;display:grid;place-items:center;cursor:pointer;font-size:.9rem;flex-shrink:0}
-.btn-icon:hover{background:#e2e8f0}
-.btn-speak{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--azul-medio),var(--azul));color:#fff;display:grid;place-items:center;cursor:pointer;font-size:1rem;flex-shrink:0}
-.btn-speak:hover{transform:scale(1.08)}.btn-speak.playing{background:linear-gradient(135deg,var(--verde),#15803d)}
-.btn-rec{background:#fee2e2;color:#b91c1c;border:2px solid #fecaca;padding:8px 14px;border-radius:50px;font-weight:700;font-size:.82rem;cursor:pointer}
-.btn-rec.recording{background:#dc2626;color:#fff;animation:pulse-rec 1s infinite}
-@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
-.container{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
-.page-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}
-.page-header h1{font-size:1.6rem;color:var(--azul);font-weight:800}.page-header h1 span{color:var(--talento)}
-.page-header p{color:var(--gris);font-size:.92rem}
-.readers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
-.reader-card{background:var(--blanco);border-radius:var(--radio);border:1px solid var(--borde);box-shadow:var(--sombra);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:.2s}
-.reader-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(15,23,42,.12)}
-.reader-card-cover{height:120px;background:linear-gradient(135deg,#1e293b,#334155);display:grid;place-items:center;color:#fff;font-size:2rem;position:relative;overflow:hidden}
-.reader-card-cover img{width:100%;height:100%;object-fit:cover}
-.level-badge{position:absolute;top:8px;right:8px;background:var(--acento);color:#1f2937;font-weight:800;font-size:.7rem;padding:3px 9px;border-radius:50px}
-.reader-card-body{padding:14px 16px;flex:1}.reader-card-body h3{font-size:1rem;color:var(--azul);font-weight:800;margin-bottom:4px}
-.reader-card-body p{font-size:.82rem;color:var(--gris)}
-.meta-pill{display:inline-block;background:var(--azul-claro);color:var(--azul);padding:2px 9px;border-radius:50px;font-weight:600;font-size:.72rem;margin:8px 4px 0 0}
-.meta-pill.draft{background:#fef3c7;color:#92400e}.meta-pill.published{background:#dcfce7;color:#166534}
-.reader-card-actions{display:flex;gap:8px;padding:0 16px 14px}
-.empty-state{text-align:center;padding:50px 20px;color:var(--gris);background:var(--blanco);border-radius:var(--radio);border:2px dashed var(--borde)}
-.editor-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px 14px;background:var(--blanco);border-radius:var(--radio);border:1px solid var(--borde);align-items:center}
-.editor-toolbar .spacer{flex:1}
-.editor-layout{display:grid;grid-template-columns:420px 1fr;gap:20px;min-height:70vh}
-@media(max-width:960px){.editor-layout{grid-template-columns:1fr}}
-.panel{background:var(--blanco);border-radius:var(--radio);border:1px solid var(--borde);box-shadow:var(--sombra);overflow:hidden;display:flex;flex-direction:column}
-.panel-header{padding:12px 16px;background:linear-gradient(120deg,var(--talento),var(--talento-claro));color:#fff;font-weight:800;font-size:.92rem}
-.preview-panel .panel-header{background:linear-gradient(120deg,var(--azul),var(--azul-medio))}
-.panel-tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--borde);background:#f8fafc}
-.panel-tabs button{flex:1;min-width:70px;padding:10px 6px;border:none;background:transparent;font-size:.75rem;font-weight:700;color:var(--gris);cursor:pointer;border-bottom:3px solid transparent}
-.panel-tabs button:hover{color:var(--talento);background:#eef2ff}
-.panel-tabs button.active{color:var(--talento);border-bottom-color:var(--talento);background:#fff}
-.panel-body{padding:16px;overflow-y:auto;flex:1;max-height:calc(100vh - 220px)}
-.tab-pane{display:none}.tab-pane.active{display:block}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:.75rem;font-weight:700;color:var(--gris);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
-.field input[type=text],.field select,.field textarea{width:100%;padding:10px 12px;border:2px solid var(--borde);border-radius:10px;font-size:.9rem}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--talento);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
-.field textarea{min-height:100px;resize:vertical}
-.section-title{font-size:.84rem;font-weight:800;color:var(--azul);margin:14px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--azul-claro);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hint{font-size:.75rem;color:var(--gris);margin-bottom:8px}
-.char-list,.kw-list,.chapters-list{display:flex;flex-direction:column;gap:10px}
-.char-card{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#f8fafc;display:grid;grid-template-columns:100px 1fr auto;gap:12px;align-items:start}
-.char-photo{width:100px;height:120px;border-radius:10px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);display:grid;place-items:center;font-size:1.8rem;overflow:hidden;cursor:pointer;border:2px dashed #a5b4fc}
-.char-photo img{width:100%;height:100%;object-fit:cover;object-position:center top}
-.char-photo input{display:none}
-.char-name-row{display:flex;gap:6px;align-items:center}
-.char-name-row input,.char-fields textarea{width:100%;padding:7px 10px;border:1.5px solid var(--borde);border-radius:8px;font-size:.85rem}
-.char-fields{display:flex;flex-direction:column;gap:6px;min-width:0}
-.char-fields textarea{min-height:56px;resize:vertical}
-.kw-row{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#fafbff}
-.kw-word{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.kw-word input{flex:1;padding:8px 10px;border:1.5px solid var(--borde);border-radius:8px;font-weight:700;font-size:.88rem}
-.kw-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.kw-meta label{font-size:.68rem;font-weight:700;color:var(--gris);display:block;margin-bottom:2px}
-.kw-meta input{width:100%;padding:7px 9px;border:1.5px solid var(--borde);border-radius:8px;font-size:.8rem}
-.kw-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.api-badge{font-size:.68rem;background:#e0e7ff;color:var(--talento);padding:2px 7px;border-radius:50px;font-weight:700}
-.chapter-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--borde);background:#f8fafc;cursor:pointer}
-.chapter-item:hover{border-color:var(--talento);background:#eef2ff}
-.chapter-item.active{border-color:var(--talento);background:linear-gradient(90deg,#eef2ff,#e0e7ff);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
-.chapter-item .num{width:26px;height:26px;border-radius:7px;background:var(--talento);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.75rem;flex-shrink:0}
-.chapter-item .title{flex:1;font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.image-upload-zone{border:2px dashed var(--borde);border-radius:12px;padding:14px;text-align:center;background:#f8fafc;cursor:pointer;font-size:.84rem;color:var(--gris)}
-.image-upload-zone:hover,.image-upload-zone.dragover{border-color:var(--talento);background:#eef2ff}
-.image-upload-zone input{display:none}
-.image-preview{margin-top:8px;border-radius:10px;overflow:hidden;max-height:130px;position:relative}
-.image-preview img{width:100%;height:130px;object-fit:cover;display:block}
-.image-preview .remove-img{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;width:26px;height:26px;border-radius:50%;cursor:pointer}
-.audio-box{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#f8fafc}
-.audio-box.has-audio{background:#f0fdf4;border-color:#86efac}
-.rec-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.audio-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
-.audio-controls audio{flex:1;min-width:160px;height:34px}
-.mcq-card{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#fafbff;margin-bottom:10px}
-.mcq-card .mcq-q{width:100%;padding:8px 10px;border:1.5px solid var(--borde);border-radius:8px;font-size:.86rem;margin-bottom:8px;font-weight:600}
-.mcq-opt{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.mcq-opt input[type=text]{flex:1;padding:6px 9px;border:1.5px solid var(--borde);border-radius:8px;font-size:.82rem}
-.mcq-opt input[type=radio]{accent-color:var(--verde)}
-.mcq-opt label{font-size:.72rem;color:var(--gris);white-space:nowrap}
-.import-box{border:2px dashed var(--talento);border-radius:14px;padding:14px;background:linear-gradient(135deg,#eef2ff,#faf5ff);margin-bottom:12px}
-.import-box h4{color:var(--talento);font-size:.88rem;font-weight:800;margin-bottom:6px}
-.preview-scroll{padding:20px;overflow-y:auto;max-height:calc(100vh - 200px)}
-.book-cover-preview{background:linear-gradient(160deg,#0f172a,#1e293b 50%,#334155);border-radius:14px;padding:40px 24px;text-align:center;color:#fff;margin-bottom:20px;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
-.book-cover-preview.has-img{padding:0;min-height:220px}
-.book-cover-preview.has-img img{width:100%;height:220px;object-fit:cover;border-radius:14px}
-.book-cover-preview .cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78),transparent 55%);border-radius:14px;display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
-.book-cover-preview h2{font-size:1.5rem;font-weight:800}
-.chars-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:18px}
-.char-preview-card{background:#fff;border:1px solid var(--borde);border-radius:12px;padding:12px;text-align:center}
-.char-preview-card .avatar{width:80px;height:100px;border-radius:10px;margin:0 auto 8px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);overflow:hidden;display:grid;place-items:center}
-.char-preview-card .avatar img{width:100%;height:100%;object-fit:cover;object-position:center top}
-.char-preview-card .name-row{display:flex;align-items:center;justify-content:center;gap:6px}
-.char-preview-card h4{font-size:.86rem;color:var(--azul);font-weight:800}
-.char-preview-card p{font-size:.72rem;color:var(--gris)}
-
-/* === Key words collapsible === */
-.kw-preview-block{background:#f0f9ff;border-radius:12px;margin-bottom:18px;border-left:4px solid var(--azul-medio);padding:0;overflow:hidden}
-.kw-preview-block > summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:.82rem;font-weight:800;color:var(--azul);display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s}
-.kw-preview-block > summary::-webkit-details-marker{display:none}
-.kw-preview-block > summary::after{content:'▸';margin-left:auto;color:var(--azul-medio);font-size:.9rem;transition:transform .2s}
-.kw-preview-block[open] > summary::after{transform:rotate(90deg)}
-.kw-preview-block > summary:hover{background:#e0f2fe}
-.kw-preview-block .kw-inner{padding:0 14px 14px}
-.kw-preview-item{display:flex;align-items:center;gap:8px;font-size:.86rem;margin-bottom:6px;flex-wrap:wrap}
-.kw-preview-item .ipa{color:var(--talento);font-family:monospace}
-
-.chapter-preview{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:18px;margin-bottom:16px}
-.chapter-preview h3{color:var(--azul);font-size:1.1rem;font-weight:800;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--azul-claro)}
-.chapter-text{font-size:.92rem;line-height:1.7;margin-bottom:12px;white-space:pre-wrap}
-.chapter-img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px}
-.audio-player{background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:4px solid var(--verde);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.audio-player audio{flex:1;min-width:160px;height:34px}
-.reader-rec-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fef3c7;border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:4px solid var(--acento)}
-.questions-block{background:#f8fafc;border-radius:10px;padding:12px;border-left:4px solid var(--talento)}
-.preview-mcq{margin:8px 0;padding:10px;background:#f1f5f9;border-radius:8px}
-.preview-mcq .opt{margin:4px 0 4px 8px;font-size:.86rem}
-.preview-mcq .opt.correct{color:var(--verde);font-weight:700}
-.student-opt{display:block;margin:6px 0;padding:8px 12px;border:1.5px solid var(--borde);border-radius:8px;cursor:pointer;background:#fff}
-.student-opt:hover{border-color:var(--talento)}
-.student-opt.selected{border-color:var(--talento);background:#eef2ff}
-.student-opt.right{border-color:var(--verde);background:#f0fdf4}
-.student-opt.wrong{border-color:var(--rojo);background:#fef2f2}
-.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);display:none;align-items:center;justify-content:center;z-index:300;padding:16px}
-.modal-overlay.show{display:flex}
-.modal{background:#fff;border-radius:16px;padding:22px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto}
-.modal h3{color:var(--azul);margin-bottom:10px;font-size:1.15rem}
-.modal ul{margin:10px 0 16px 18px;font-size:.9rem;color:var(--texto)}
-.modal-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.toast{position:fixed;bottom:24px;right:24px;z-index:400;background:#1e293b;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.88rem;transform:translateY(80px);opacity:0;transition:.3s}
-.toast.show{transform:translateY(0);opacity:1}.toast.success{background:#166534}.toast.error{background:#991b1b}
-.view{display:none}.view.active{display:block}
-.status-bar{font-size:.78rem;color:var(--gris);display:flex;gap:8px;align-items:center}
-.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.saved{background:var(--verde)}
-.checklist{background:#f8fafc;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;font-size:.8rem;margin-top:8px}
-.checklist li{margin:4px 0}.checklist .ok{color:var(--verde)}.checklist .no{color:var(--rojo)}
-.mode-toggle{display:flex;gap:6px;background:#f1f5f9;padding:4px;border-radius:50px}
-.mode-toggle button{border:none;background:transparent;padding:6px 12px;border-radius:50px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--gris)}
-.mode-toggle button.active{background:#fff;color:var(--azul);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  * { box-sizing: border-box; font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { margin: 0; background: #f5f5f7; color: #1d1d1f; }
+  header { background: #1d1d1f; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { margin: 0; font-size: 20px; }
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #d2d2d7; padding: 0 24px; }
+  .tab-btn { background: none; border: none; padding: 14px 20px; font-size: 15px; cursor: pointer; color: #6e6e73; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #0071e3; border-bottom-color: #0071e3; font-weight: 600; }
+  .tab-panel { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card h2 { margin: 0 0 16px; font-size: 18px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #6e6e73; }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;
+  }
+  textarea { resize: vertical; min-height: 100px; font-family: inherit; }
+  button.primary { background: #0071e3; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  button.secondary { background: #e8e8ed; color: #1d1d1f; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  button.danger { background: #ff3b30; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .image-box { border: 2px dashed #d2d2d7; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: .2s; background: #fafafa; }
+  .image-box:hover { border-color: #0071e3; background: #f0f7ff; }
+  .image-box img { max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 0 auto 12px; }
+  .image-box .placeholder { color: #86868b; font-size: 14px; }
+  .image-box input[type=file] { display: none; }
+  .chapter-block { border: 1px solid #e8e8ed; border-radius: 12px; padding: 20px; margin-bottom: 20px; background: #fafafa; }
+  .chapter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .chapter-header h3 { margin: 0; font-size: 16px; }
+  .kw-row, .q-row, .char-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .kw-row input, .q-row input, .char-row input { flex: 1; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .hint { font-size: 12px; color: #86868b; margin-top: 4px; }
+  .status { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+  .status.ok { background: #d1f5d3; color: #1c6b2a; display: block; }
+  .status.err { background: #ffd9d6; color: #a3201a; display: block; }
+  .status.warn { background: #fff3cd; color: #7a5d00; display: block; }
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #fff; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e8e8ed; }
+  .list-item .meta { font-size: 12px; color: #86868b; }
+  .empty { color: #86868b; font-size: 14px; padding: 12px 0; }
+  .preview { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #fafafa; padding: 16px; border-radius: 8px; border: 1px solid #e8e8ed; max-height: 500px; overflow: auto; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="logo-text">Readers<small>Interactive Book Builder</small></div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <span class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready</span></span>
-      <button class="btn btn-ghost btn-mini" id="btnBackToList" style="display:none" type="button">← My Readers</button>
-    </div>
-  </div>
+<header>
+  <h1>📖 Book Generator</h1>
 </header>
-<main class="container">
-  <div class="view active" id="viewList">
-    <div class="page-header">
-      <div><h1>📚 <span>Readers</span></h1><p>Create interactive books. Projects are stored in Supabase.</p></div>
-      <button class="btn btn-talento" id="btnNewReader" type="button">＋ New Reader</button>
-    </div>
-    <div class="readers-grid" id="readersGrid"></div>
-  </div>
 
-  <div class="view" id="viewEditor">
-    <div class="editor-toolbar">
-      <button class="btn btn-ghost btn-mini" id="btnBack" type="button">← Back</button>
-      <button class="btn btn-azul btn-mini" id="btnSave" type="button">💾 Save project</button>
-      <button class="btn btn-verde btn-mini" id="btnPublish" type="button">🚀 Publish</button>
-      <button class="btn btn-rojo btn-mini" id="btnDelete" type="button" style="display:none">🗑 Delete</button>
-      <div class="spacer"></div>
-      <div class="mode-toggle">
-        <button type="button" class="active" data-mode="edit">✏️ Edit</button>
-        <button type="button" data-mode="student">👤 Student mode</button>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="book">Book</button>
+  <button class="tab-btn" data-tab="chapters">Chapters</button>
+  <button class="tab-btn" data-tab="characters">Characters</button>
+  <button class="tab-btn" data-tab="import">Import</button>
+  <button class="tab-btn" data-tab="export">Export</button>
+</div>
+
+<!-- ============ TAB BOOK ============ -->
+<div class="tab-panel active" id="tab-book">
+
+  <div class="card">
+    <h2>Información del libro</h2>
+    <div class="grid">
+      <div>
+        <label>Título del libro</label>
+        <input type="text" id="bookTitle" placeholder="The Lost Notebook">
+      </div>
+      <div>
+        <label>Nivel</label>
+        <select id="bookLevel">
+          <option value="A2">A2</option>
+          <option value="B1">B1</option>
+          <option value="B2">B2</option>
+          <option value="C1">C1</option>
+        </select>
       </div>
     </div>
-    <div class="editor-layout" id="editLayout">
-      <div class="panel">
-        <div class="panel-header">📋 Work Panel</div>
-        <div class="panel-tabs" id="panelTabs">
-          <button type="button" class="active" data-tab="libro">Book</button>
-          <button type="button" data-tab="personajes">Characters</button>
-          <button type="button" data-tab="capitulos">Chapters</button>
-          <button type="button" data-tab="importar">Import</button>
-        </div>
-        <div class="panel-body">
-          <div class="tab-pane active" id="tab-libro">
-            <div class="field"><label>Book title</label><input type="text" id="fieldTitle" placeholder="Ej: Hamlet – A Simplified Reader"></div>
-            <div class="field"><label>CEFR level</label>
-              <select id="fieldLevel"><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C1">C1</option></select>
-            </div>
-            <div class="field"><label>Cover image</label>
-              <div class="image-upload-zone" id="coverUploadZone">🖼 Click or drop cover image<input type="file" id="coverInput" accept="image/*"></div>
-              <div class="image-preview" id="coverPreview" style="display:none"><img id="coverImg" alt=""><button type="button" class="remove-img" id="removeCover">✕</button></div>
-            </div>
-            <div class="checklist" id="publishCheck"></div>
-          </div>
-          <div class="tab-pane" id="tab-personajes">
-            <div class="section-title">👥 Characters <button class="btn btn-talento btn-xs" id="btnAddChar" type="button">＋ Nuevo</button></div>
-            <p class="hint">🔊 Pronounce the name (Web Speech API).</p>
-            <div class="char-list" id="charList"></div>
-          </div>
-          <div class="tab-pane" id="tab-capitulos">
-            <div class="section-title">📖 Chapters</div>
-            <div class="chapters-list" id="chaptersList"></div>
-            <button class="btn btn-talento btn-mini" id="btnAddChapter" type="button" style="width:100%;margin-bottom:12px">＋ Add chapter</button>
-            <div id="chapterEditor" style="display:none">
-              <div class="field"><label>Chapter title</label><input type="text" id="chTitle"></div>
-              <div class="field"><label>Text</label><textarea id="chText"></textarea></div>
-              <div class="field"><label>Image</label>
-                <div class="image-upload-zone" id="chImgZone">🖼 Upload image<input type="file" id="chImgInput" accept="image/*"></div>
-                <div class="image-preview" id="chImgPreview" style="display:none"><img id="chImg" alt=""><button type="button" class="remove-img" id="removeChImg">✕</button></div>
-              </div>
-              <div class="field"><label>Teacher audio (your voice)</label>
-                <div class="audio-box" id="chAudioBox">
-                  <div class="rec-row">
-                    <button type="button" class="btn-rec" id="btnRecord">🎙 Record my voice</button>
-                    <button type="button" class="btn btn-ghost btn-xs" id="btnStopRec" style="display:none">⏹ Stop</button>
-                    <span id="recTimer" class="hint" style="display:none">0:00</span>
-                  </div>
-                  <div class="image-upload-zone" id="chAudioZone" style="margin-top:8px;padding:10px;font-size:.8rem">or upload an audio file<input type="file" id="chAudioInput" accept="audio/*"></div>
-                  <div id="chAudioPlayerWrap" style="display:none">
-                    <div id="chAudioName" style="font-size:.82rem;font-weight:600;color:var(--azul)"></div>
-                    <div class="audio-controls"><audio id="chAudioPlayer" controls></audio>
-                    <button type="button" class="btn btn-rojo btn-xs" id="removeChAudio">✕</button></div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="section-title">🔑 Chapter key words <button type="button" class="btn btn-talento btn-xs" id="btnAddKeyword">＋ Word</button></div>
-              <p class="hint">Per chapter. Upload or record your own pronunciation (no Web Speech here).</p>
-              <div class="kw-list" id="kwList"></div>
-
-              <div class="section-title">❓ Comprehension questions (MCQ)</div>
-
-              <p class="hint">3 options · mark the correct one</p>
-              <div id="questionsList"></div>
-
-              <button type="button" class="btn btn-talento btn-xs" id="btnAddQuestion">＋ Add question</button>
-            </div>
-          </div>
-          <div class="tab-pane" id="tab-importar">
-            <div class="import-box">
-              <h4>📥 Import PDF or DOCX</h4>
-              <p class="hint">Detects title, chapters, key words and questions. You will review a summary before applying.</p>
-              <div class="image-upload-zone" id="importZone">📄 Click or drop PDF/DOCX<input type="file" id="importInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-              <div id="importFileName" class="hint" style="display:none;margin-top:8px"></div>
-              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-                <button type="button" class="btn btn-talento btn-mini" id="btnTrasladar" disabled>➡️ Transfer to Panel</button>
-                <button type="button" class="btn btn-ghost btn-mini" id="btnClearImport" style="display:none">Clear</button>
-              </div>
-              <div id="importStatus" class="hint" style="margin-top:8px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="panel preview-panel">
-        <div class="panel-header" id="previewHeader">👁 Preview (edit mode)</div>
-        <div class="preview-scroll" id="previewArea"></div>
-      </div>
+    <div style="margin-top:16px">
+      <label>Información del libro (sinopsis, autor, editorial...)</label>
+      <textarea id="bookInfo" placeholder="Escribe aquí la información general del libro..."></textarea>
     </div>
   </div>
-</main>
 
-<div class="modal-overlay" id="importModal">
-  <div class="modal">
-    <h3>Confirm import</h3>
-    <p class="hint">Review what was detected before applying to the panel.</p>
-    <ul id="importSummary"></ul>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost btn-mini" id="btnImportCancel">Cancel</button>
-      <button type="button" class="btn btn-talento btn-mini" id="btnImportConfirm">Apply to panel</button>
+  <div class="card">
+    <h2>Portada e imágenes</h2>
+    <div class="grid">
+
+      <div>
+        <label>Información del libro (imagen)</label>
+        <label class="image-box" for="bookInfoImg">
+          <img id="bookInfoImgPreview" style="display:none">
+          <div class="placeholder" id="bookInfoImgPlaceholder">📘 Haz clic para subir imagen de información</div>
+          <input type="file" id="bookInfoImg" accept="image/*">
+        </label>
+        <div class="hint">Imagen asociada a la información del libro</div>
+      </div>
+
+      <div>
+        <label>Contraportada</label>
+        <label class="image-box" for="backCoverImg">
+          <img id="backCoverImgPreview" style="display:none">
+          <div class="placeholder" id="backCoverImgPlaceholder">📕 Haz clic para subir la contraportada</div>
+          <input type="file" id="backCoverImg" accept="image/*">
+        </label>
+        <div class="hint">Imagen de la contraportada del libro</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ TAB CHAPTERS ============ -->
+<div class="tab-panel" id="tab-chapters">
+  <div class="card">
+    <h2>Capítulos</h2>
+    <div id="chaptersList"></div>
+    <button class="primary" id="addChapterBtn">+ Añadir capítulo</button>
+  </div>
+</div>
+
+<!-- ============ TAB CHARACTERS ============ -->
+<div class="tab-panel" id="tab-characters">
+  <div class="card">
+    <h2>Personajes del libro</h2>
+    <p class="hint" style="margin-bottom:16px">
+      Los personajes se extraen automáticamente de los capítulos (campo "Characters in this chapter")
+      y también puedes añadirlos manualmente.
+    </p>
+    <div id="charactersList"></div>
+    <div class="actions">
+      <button class="secondary" id="refreshCharsBtn">🔄 Refrescar desde capítulos</button>
+      <button class="primary" id="addCharBtn">+ Añadir personaje manual</button>
+    </div>
+    <div id="charsStatus" class="status"></div>
+  </div>
+</div>
+
+<!-- ============ TAB IMPORT ============ -->
+<div class="tab-panel" id="tab-import">
+  <div class="card">
+    <h2>Importar libro (.docx)</h2>
+    <p class="hint" style="margin-bottom:16px">
+      Sube un archivo .docx con la estructura del formato de libro. Se extraerán título, nivel,
+      capítulos, personajes, key words y preguntas de comprensión.
+    </p>
+    <input type="file" id="importFile" accept=".docx">
+    <div class="actions">
+      <button class="primary" id="importBtn">Importar</button>
+    </div>
+    <div id="importStatus" class="status"></div>
+  </div>
+</div>
+
+<!-- ============ TAB EXPORT ============ -->
+<div class="tab-panel" id="tab-export">
+  <div class="card">
+    <h2>Exportar</h2>
+    <div class="actions">
+      <button class="primary" id="exportJsonBtn">Exportar JSON</button>
+      <button class="primary" id="exportTxtBtn">Exportar texto</button>
+    </div>
+    <div style="margin-top:20px">
+      <label>Vista previa</label>
+      <div class="preview" id="exportPreview">Aquí aparecerá la vista previa...</div>
     </div>
   </div>
 </div>
-<div class="toast" id="toast"></div>
 
+<script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <script>
-// ====== SUPABASE ======
-const SUPABASE_URL = 'https://zbvhcotnhrtcqwsnaafq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpidmhjb3RuaHJ0Y3F3c25hYWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMTYwMjQsImV4cCI6MjEwODc5MjAyNH0.sz9vH0WJz8p2ARDFJygSf6AyN_moCzVFkHEb_1rsad4';
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// ======================
-
-const DICT = {
-  castle:  { m: 'a large strong building where a king or queen lives', ipa: '/ˈkɑːsl/' },
-  ghost:   { m: 'the spirit of a dead person that some people believe can appear', ipa: '/ɡəʊst/' },
-  guard:   { m: 'a person who protects a place or another person', ipa: '/ɡɑːd/' },
-  armour:  { m: 'special metal clothing worn by soldiers in the past', ipa: '/ˈɑːmə/' },
-  murder:  { m: 'the crime of killing a person on purpose', ipa: '/ˈmɜːdə/' },
-  poison:  { m: 'a dangerous substance that can kill if you eat or drink it', ipa: '/ˈpɔɪzn/' },
-  revenge: { m: 'the act of hurting someone because they hurt you first', ipa: '/rɪˈvendʒ/' },
-  mad:     { m: 'mentally ill; behaving in a strange or crazy way', ipa: '/mæd/' },
-  madness: { m: 'a state of mental illness; crazy behaviour', ipa: '/ˈmædnəs/' },
-  secret:  { m: 'something that you do not tell other people', ipa: '/ˈsiːkrət/' },
-  advisor: { m: 'a person who gives advice to a leader or important person', ipa: '/ədˈvaɪzə/' },
-  letter:  { m: 'a written message that you send to someone', ipa: '/ˈletə/' },
-  spy:     { m: 'to watch someone secretly; a person who does this', ipa: '/spaɪ/' },
-  proof:   { m: 'information or facts that show something is true', ipa: '/pruːf/' },
-  play:    { m: 'a story that actors perform in a theatre', ipa: '/pleɪ/' },
-  guilty:     { m: 'having done something wrong or illegal', ipa: '/ˈɡɪlti/' },
-  conscience: { m: 'the feeling inside you that tells you if something is right or wrong', ipa: '/ˈkɒnʃəns/' },
-  pray:       { m: 'to speak to God, often to ask for help', ipa: '/preɪ/' },
-  sword:      { m: 'a long metal weapon with a sharp blade', ipa: '/sɔːd/' },
-  curtain:    { m: 'a piece of cloth that covers a window or hides part of a stage', ipa: '/ˈkɜːtn/' },
-  truth:      { m: 'the real facts about a situation', ipa: '/truːθ/' },
-  drown:   { m: 'to die under water because you cannot breathe', ipa: '/draʊn/' },
-  funeral: { m: 'a ceremony for a person who has died', ipa: '/ˈfjuːnərəl/' },
-  grave:   { m: 'a place in the ground where a dead person is buried', ipa: '/ɡreɪv/' },
-  despair: { m: 'the feeling of having lost all hope', ipa: '/dɪˈspeə/' },
-  duel:    { m: 'a formal fight between two people with weapons', ipa: '/ˈdjuːəl/' },
-  order:   { m: 'an official instruction that must be obeyed', ipa: '/ˈɔːdə/' },
-  wound:   { m: 'an injury to the body, especially one made by a knife or sword', ipa: '/wuːnd/' },
-  queen:   { m: 'the wife of a king, or a woman who rules a country', ipa: '/kwiːn/' },
-  tragedy: { m: 'a very sad event, especially one that involves death', ipa: '/ˈtrædʒədi/' },
-  justice: { m: 'fair treatment of people according to the law', ipa: '/ˈdʒʌstɪs/' },
-  prince:    { m: 'the son of a king or queen', ipa: '/prɪns/' },
-  king:      { m: 'a man who rules a country', ipa: '/kɪŋ/' },
-  loyal:     { m: 'always supporting your friends or your country', ipa: '/ˈlɔɪəl/' },
-  honest:    { m: 'always telling the truth', ipa: '/ˈɒnɪst/' },
-  gentle:    { m: 'kind, calm and soft', ipa: '/ˈdʒentl/' },
-  brave:     { m: 'ready to face danger without showing fear', ipa: '/breɪv/' },
-  spirit:    { m: 'the part of a person that is not the body; a ghost', ipa: '/ˈspɪrɪt/' },
-  appear:    { m: 'to become visible or start to be seen', ipa: '/əˈpɪə/' },
-  disappear: { m: 'to become impossible to see', ipa: '/ˌdɪsəˈpɪə/' },
-  whisper:   { m: 'to speak very quietly', ipa: '/ˈwɪspə/' },
-  suspect:   { m: 'to think that someone may be guilty of something', ipa: '/səˈspekt/' },
-  throne:    { m: 'the special chair for a king or queen', ipa: '/θrəʊn/' },
-  crown:     { m: 'a gold circle that a king or queen wears on the head', ipa: '/kraʊn/' },
-  hamlet:    { m: "the prince of Denmark in Shakespeare's famous tragedy", ipa: '/ˈhæmlət/' },
-  claudius:  { m: "Hamlet's uncle who becomes king of Denmark", ipa: '/ˈklɔːdiəs/' },
-  gertrude:  { m: "the queen of Denmark and Hamlet's mother", ipa: '/ˈɡɜːtruːd/' },
-  ophelia:   { m: 'a young woman who loves Hamlet; daughter of Polonius', ipa: '/əˈfiːliə/' },
-  polonius:  { m: "the king's advisor and father of Ophelia and Laertes", ipa: '/pəˈləʊniəs/' },
-  horatio:   { m: "Hamlet's loyal best friend", ipa: '/həˈreɪʃiəʊ/' },
-  laertes:   { m: "Ophelia's brother, who wants revenge", ipa: '/leɪˈɜːtiːz/' }
+/* ============================================================
+   MODELO DE DATOS
+   ============================================================ */
+const state = {
+  book: {
+    title: "",
+    level: "A2",
+    info: "",
+    infoImage: null,     // dataURL
+    backCoverImage: null // dataURL
+  },
+  chapters: [],          // { id, title, characters:[], text, keyWords:[{word,def}], questions:[] }
+  characters: []         // { id, name, manual:bool }
 };
 
-let readers = [];
-let currentId = null;
-let activeChapterIdx = 0;
-let viewMode = 'edit';
-let pendingImport = null;
+let chapterId = 0;
+let charId = 0;
 
-function uid(){ return 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function defaultReader(){
-  return { id:uid(), title:'', level:'B1', coverImage:null, characters:[], keywords:[], chapters:[defaultChapter(1)], status:'draft', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
-}
-function defaultChapter(n){
-  return { id:uid(), title:'Chapter '+n, text:'', image:null, audio:null, audioName:'', learnerAudio:null, learnerAudioName:'',
-    keywords:[],
-    questions:[{q:'',options:['','',''],correct:0},{q:'',options:['','',''],correct:0},{q:'',options:['','',''],correct:0}] };
-}
-function defaultChar(){ return { id:uid(), name:'', description:'', photo:null }; }
-function defaultKeyword(){ return { word:'', meaning:'', ipa:'' }; }
+function uid(prefix){ return prefix + "_" + (++chapterId) + "_" + Date.now(); }
+function newCharId(){ return "ch_" + (++charId) + "_" + Date.now(); }
 
-/* ===== SUPABASE CRUD ===== */
-async function loadAll(){
-  const { data, error } = await supabaseClient
-    .from('readers')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) { console.error('loadAll error:', error); throw error; }
-  readers = (data || []).map(row => {
-    const r = (row.content && typeof row.content === 'object') ? row.content : {};
-    if (!r.id) r.id = row.client_id || String(row.id);
-    if (!Array.isArray(r.chapters)) r.chapters = [];
-    if (!Array.isArray(r.characters)) r.characters = [];
-    if (!r.keywords) r.keywords = [];
-    if (!r.level) r.level = 'B1';
-    if (!r.status) r.status = 'draft';
-    return r;
-  });
-  return readers;
-}
-async function saveReader(r){
-  r.updatedAt = new Date().toISOString();
-  const row = {
-    client_id: r.id,
-    title: r.title || '',
-    level: r.level || 'B1',
-    content: r,
-    updated_at: r.updatedAt
-  };
-  const { data, error } = await supabaseClient
-    .from('readers')
-    .upsert(row, { onConflict: 'client_id' })
-    .select()
-    .single();
-  if (error) { console.error('saveReader error:', error); throw error; }
-  return data;
-}
-async function deleteReaderDB(id){
-  const { error } = await supabaseClient
-    .from('readers')
-    .delete()
-    .eq('client_id', id);
-  if (error) { console.error('deleteReaderDB error:', error); throw error; }
-}
-/* ========================= */
-
-function toast(msg, type){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show '+(type||'success');
-  setTimeout(()=>t.classList.remove('show'), 2800);
-}
-function setStatus(text, saved){
-  document.getElementById('statusText').textContent = text;
-  document.getElementById('statusDot').className = 'status-dot'+(saved?' saved':'');
-}
-function showView(name){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view'+name).classList.add('active');
-  document.getElementById('btnBackToList').style.display = name==='Editor'?'inline-flex':'none';
-}
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>'); }
-function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
-function getCurrent(){ return readers.find(x=>x.id===currentId); }
-
-function speak(text, btn){
-  if(!text||!String(text).trim()){ toast('No text to speak','error'); return; }
-  if(!window.speechSynthesis){ toast('Web Speech API not available','error'); return; }
-  speechSynthesis.cancel();
-  document.querySelectorAll('.btn-speak.playing').forEach(b=>b.classList.remove('playing'));
-  const u = new SpeechSynthesisUtterance(String(text).trim());
-  u.lang='en-US'; u.rate=0.9;
-  const voices = speechSynthesis.getVoices();
-  const pref = voices.find(v=>/en-US/i.test(v.lang)&&/Google|Natural|Premium/i.test(v.name))||voices.find(v=>/en-US/i.test(v.lang));
-  if(pref) u.voice=pref;
-  if(btn){ btn.classList.add('playing'); u.onend=()=>btn.classList.remove('playing'); u.onerror=()=>btn.classList.remove('playing'); }
-  speechSynthesis.speak(u);
-}
-if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
-
-async function fetchDictAPI(word){
-  try{
-    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
-    if(!res.ok) return null;
-    const data = await res.json();
-    const entry = data[0];
-    if(!entry) return null;
-    let ipa = entry.phonetic || '';
-    if(!ipa && entry.phonetics){
-      const p = entry.phonetics.find(x=>x.text)||entry.phonetics[0];
-      if(p&&p.text) ipa = p.text;
-    }
-    if(ipa && !ipa.startsWith('/')) ipa = '/'+ipa.replace(/^\/|\/$/g,'')+'/';
-    let meaning = '';
-    if(entry.meanings&&entry.meanings[0]&&entry.meanings[0].definitions){
-      meaning = entry.meanings[0].definitions[0].definition || '';
-    }
-    return { meaning, ipa };
-  }catch(e){ return null; }
-}
-
-document.getElementById('panelTabs').addEventListener('click', e=>{
-  const btn = e.target.closest('[data-tab]');
-  if(!btn) return;
-  document.querySelectorAll('#panelTabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-});
-
-document.querySelectorAll('[data-mode]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
-    viewMode = btn.dataset.mode;
-    document.getElementById('previewHeader').textContent = viewMode==='student' ? '👤 Student mode' : '👁 Preview (edit mode)';
-    document.getElementById('editLayout').style.gridTemplateColumns = viewMode==='student' ? '1fr' : '';
-    document.querySelector('.panel:not(.preview-panel)').style.display = viewMode==='student' ? 'none' : '';
-    updatePreview();
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'characters') refreshCharactersFromChapters();
+    if (btn.dataset.tab === 'export') renderExportPreview();
   });
 });
 
-function renderList(){
-  const grid = document.getElementById('readersGrid');
-  if(!readers.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div style="font-size:2.5rem">📚</div><h3 style="color:var(--azul)">You do not have any Readers yet</h3><p>Create one or import a PDF/DOCX.</p></div>';
+/* ============================================================
+   TAB BOOK
+   ============================================================ */
+document.getElementById('bookTitle').addEventListener('input', e => state.book.title = e.target.value);
+document.getElementById('bookLevel').addEventListener('change', e => state.book.level = e.target.value);
+document.getElementById('bookInfo').addEventListener('input', e => state.book.info = e.target.value);
+
+function setupImageInput(inputId, previewId, placeholderId, key){
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  const placeholder = document.getElementById(placeholderId);
+
+  input.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      state.book[key] = ev.target.result;
+      preview.src = ev.target.result;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+setupImageInput('bookInfoImg', 'bookInfoImgPreview', 'bookInfoImgPlaceholder', 'infoImage');
+setupImageInput('backCoverImg', 'backCoverImgPreview', 'backCoverImgPlaceholder', 'backCoverImage');
+
+/* ============================================================
+   CHAPTERS
+   ============================================================ */
+function createChapter(){
+  return {
+    id: uid('ch'),
+    title: "",
+    characters: [],
+    text: "",
+    keyWords: [{word:"", def:""}],
+    questions: [""]
+  };
+}
+
+function addChapter(){
+  state.chapters.push(createChapter());
+  renderChapters();
+}
+
+document.getElementById('addChapterBtn').addEventListener('click', addChapter);
+
+function renderChapters(){
+  const container = document.getElementById('chaptersList');
+  if (state.chapters.length === 0){
+    container.innerHTML = '<div class="empty">No hay capítulos todavía. Pulsa "+ Añadir capítulo".</div>';
     return;
   }
-  grid.innerHTML = readers.map(r=>{
-    const cover = r.coverImage? '<img src="'+r.coverImage+'" alt="">' : '📖';
-    const st = r.status==='published'?'published':'draft';
-    const stL = r.status==='published'?'Published':'Draft';
-    return '<div class="reader-card" data-id="'+r.id+'"><div class="reader-card-cover">'+cover+'<span class="level-badge">'+r.level+'</span></div><div class="reader-card-body"><h3>'+(r.title||'Untitled')+'</h3><p>'+r.chapters.length+' cap. · '+(r.characters||[]).length+' pers. · '+(r.keywords||[]).length+' palabras</p><span class="meta-pill '+st+'">'+stL+'</span></div><div class="reader-card-actions"><button class="btn btn-azul btn-mini" data-edit="'+r.id+'">✏️ Edit</button><button class="btn btn-ghost btn-mini" data-dup="'+r.id+'">📋</button></div></div>';
-  }).join('');
-  grid.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openEditor(b.dataset.edit); });
-  grid.querySelectorAll('[data-dup]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); duplicateReader(b.dataset.dup); });
-  grid.querySelectorAll('.reader-card').forEach(c=>c.onclick=()=>openEditor(c.dataset.id));
-}
+  container.innerHTML = '';
+  state.chapters.forEach((ch, idx) => {
+    const block = document.createElement('div');
+    block.className = 'chapter-block';
+    block.innerHTML = `
+      <div class="chapter-header">
+        <h3>Capítulo ${idx+1}</h3>
+        <button class="danger" data-del="${ch.id}">Eliminar</button>
+      </div>
 
-function updateChecklist(){
-  const r = getCurrent(); if(!r) return;
-  const items = [
-    [!!r.title, 'Title'],
-    [r.chapters.length>0, 'At least 1 chapter'],
-    [r.chapters.some(c=>c.text&&c.text.trim()), 'Text in a chapter'],
-    [r.chapters.some(c=>(c.keywords||[]).some(k=>k.word)), 'Key words (optional)'],
-    [(r.characters||[]).some(c=>c.name), 'Characters (optional)']
-  ];
-  document.getElementById('publishCheck').innerHTML = '<strong>Publish checklist</strong><ul style="list-style:none;padding:0">'+
-    items.map(([ok,label])=>'<li class="'+(ok?'ok':'no')+'">'+(ok?'✓':'○')+' '+label+'</li>').join('')+'</ul>';
-}
+      <label>Título del capítulo</label>
+      <input type="text" data-field="title" data-id="${ch.id}" value="${escapeAttr(ch.title)}" placeholder="The Missing Notebook">
 
-async function openEditor(id){
-  currentId = id;
-  const r = getCurrent(); if(!r) return;
-  document.getElementById('fieldTitle').value = r.title||'';
-  document.getElementById('fieldLevel').value = r.level||'B1';
-  document.getElementById('btnDelete').style.display = 'inline-flex';
-  if(r.coverImage){ document.getElementById('coverPreview').style.display='block'; document.getElementById('coverImg').src=r.coverImage; }
-  else document.getElementById('coverPreview').style.display='none';
-  renderCharacters(); renderKeywords(); activeChapterIdx=0; renderChaptersList();
-  if(r.chapters.length) loadChapterEditor(0); else document.getElementById('chapterEditor').style.display='none';
-  updateChecklist(); updatePreview(); showView('Editor');
-  setStatus(r.status==='published'?'Published':'Draft');
-}
+      <div style="margin-top:12px">
+        <label>Personajes del capítulo</label>
+        <div class="chars-wrap" data-chars="${ch.id}"></div>
+        <button class="secondary" data-addchar="${ch.id}" style="margin-top:6px">+ Añadir personaje</button>
+      </div>
 
-async function createNewReader(){
-  const r = defaultReader();
-  readers.unshift(r);
-  try { await saveReader(r); } catch(e){ toast('Save failed: check Supabase','error'); }
-  openEditor(r.id);
-  toast('New Reader created');
-}
-async function duplicateReader(id){
-  const o = readers.find(x=>x.id===id); if(!o) return;
-  const c = JSON.parse(JSON.stringify(o));
-  c.id=uid(); c.title=(c.title||'Untitled')+' (copia)'; c.status='draft';
-  c.createdAt=c.updatedAt=new Date().toISOString();
-  readers.unshift(c);
-  try { await saveReader(c); } catch(e){ toast('Duplicate failed','error'); }
-  renderList(); toast('Duplicated');
-}
+      <div style="margin-top:12px">
+        <label>Texto del capítulo</label>
+        <textarea data-field="text" data-id="${ch.id}" placeholder="Escribe el texto del capítulo...">${escapeHtml(ch.text)}</textarea>
+      </div>
 
-function collectFromForm(){
-  const r = getCurrent(); if(!r) return;
-  r.title = document.getElementById('fieldTitle').value.trim();
-  r.level = document.getElementById('fieldLevel').value;
-  r.characters = [];
-  document.querySelectorAll('#charList .char-card').forEach(card=>{
-    r.characters.push({ id:card.dataset.cid||uid(), name:card.querySelector('[data-char-name]')?.value.trim()||'', description:card.querySelector('[data-char-desc]')?.value.trim()||'', photo:card.dataset.photo||null });
+      <div style="margin-top:12px">
+        <label>Key Words</label>
+        <div class="kw-wrap" data-kw="${ch.id}"></div>
+        <button class="secondary" data-addkw="${ch.id}" style="margin-top:6px">+ Añadir key word</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <label>Comprehension Questions</label>
+        <div class="q-wrap" data-q="${ch.id}"></div>
+        <button class="secondary" data-addq="${ch.id}" style="margin-top:6px">+ Añadir pregunta</button>
+      </div>
+    `;
+    container.appendChild(block);
+    renderChapterChars(ch, block.querySelector(`[data-chars="${ch.id}"]`));
+    renderChapterKeywords(ch, block.querySelector(`[data-kw="${ch.id}"]`));
+    renderChapterQuestions(ch, block.querySelector(`[data-q="${ch.id}"]`));
   });
-  if(r.chapters[activeChapterIdx]){
-    const ch = r.chapters[activeChapterIdx];
-    ch.title = document.getElementById('chTitle').value.trim();
-    ch.text = document.getElementById('chText').value;
-    const prevKw = ch.keywords || [];
-    ch.keywords = [];
-    document.querySelectorAll('#kwList .kw-row').forEach((row, i) => {
-      const prev = prevKw[i] || {};
-      ch.keywords.push({
-        word: row.querySelector('[data-kw-word]')?.value.trim() || '',
-        meaning: row.querySelector('[data-kw-meaning]')?.value.trim() || '',
-        ipa: row.querySelector('[data-kw-ipa]')?.value.trim() || '',
-        audio: prev.audio || null,
-        audioName: prev.audioName || ''
-      });
+
+  container.querySelectorAll('[data-field="title"]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const ch = state.chapters.find(c => c.id === e.target.dataset.id);
+      if (ch) ch.title = e.target.value;
     });
-    const cards = document.querySelectorAll('#questionsList .mcq-card');
-    if(cards.length){
-      ch.questions = [];
-      cards.forEach(card=>{
-        const q = card.querySelector('[data-mcq-q]')?.value.trim()||'';
-        const options = [0,1,2].map(oi=>card.querySelector('[data-mcq-opt="'+oi+'"]')?.value.trim()||'');
-        const checked = card.querySelector('input[data-mcq-correct]:checked');
-        ch.questions.push({ q, options, correct: checked?parseInt(checked.value,10):0 });
-      });
+  });
+  container.querySelectorAll('[data-field="text"]').forEach(ta => {
+    ta.addEventListener('input', e => {
+      const ch = state.chapters.find(c => c.id === e.target.dataset.id);
+      if (ch) ch.text = e.target.value;
+    });
+  });
+  container.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      state.chapters = state.chapters.filter(c => c.id !== e.target.dataset.del);
+      renderChapters();
+    });
+  });
+  container.querySelectorAll('[data-addkw]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const ch = state.chapters.find(c => c.id === e.target.dataset.addkw);
+      if (ch){ ch.keyWords.push({word:"", def:""}); renderChapters(); }
+    });
+  });
+  container.querySelectorAll('[data-addq]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const ch = state.chapters.find(c => c.id === e.target.dataset.addq);
+      if (ch){ ch.questions.push(""); renderChapters(); }
+    });
+  });
+  container.querySelectorAll('[data-addchar]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const ch = state.chapters.find(c => c.id === e.target.dataset.addchar);
+      if (ch){ ch.characters.push(""); renderChapters(); }
+    });
+  });
+}
+
+function renderChapterChars(ch, wrap){
+  wrap.innerHTML = '';
+  ch.characters.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'char-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeAttr(name)}" placeholder="Nombre del personaje">
+      <button class="danger" data-delchar="${i}">×</button>
+    `;
+    row.querySelector('input').addEventListener('input', e => {
+      ch.characters[i] = e.target.value;
+    });
+    row.querySelector('[data-delchar]').addEventListener('click', () => {
+      ch.characters.splice(i,1);
+      renderChapters();
+    });
+    wrap.appendChild(row);
+  });
+  if (ch.characters.length === 0){
+    wrap.innerHTML = '<div class="hint">Sin personajes en este capítulo.</div>';
+  }
+}
+
+function renderChapterKeywords(ch, wrap){
+  wrap.innerHTML = '';
+  ch.keyWords.forEach((kw, i) => {
+    const row = document.createElement('div');
+    row.className = 'kw-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeAttr(kw.word)}" placeholder="palabra">
+      <input type="text" value="${escapeAttr(kw.def)}" placeholder="definición en inglés">
+      <button class="danger" data-delkw="${i}">×</button>
+    `;
+    const [wInp, dInp] = row.querySelectorAll('input');
+    wInp.addEventListener('input', e => kw.word = e.target.value);
+    dInp.addEventListener('input', e => kw.def = e.target.value);
+    row.querySelector('[data-delkw]').addEventListener('click', () => {
+      ch.keyWords.splice(i,1);
+      renderChapters();
+    });
+    wrap.appendChild(row);
+  });
+}
+
+function renderChapterQuestions(ch, wrap){
+  wrap.innerHTML = '';
+  ch.questions.forEach((q, i) => {
+    const row = document.createElement('div');
+    row.className = 'q-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeAttr(q)}" placeholder="Pregunta ${i+1}?">
+      <button class="danger" data-delq="${i}">×</button>
+    `;
+    row.querySelector('input').addEventListener('input', e => ch.questions[i] = e.target.value);
+    row.querySelector('[data-delq]').addEventListener('click', () => {
+      ch.questions.splice(i,1);
+      renderChapters();
+    });
+    wrap.appendChild(row);
+  });
+}
+
+/* ============================================================
+   CHARACTERS TAB  (CORREGIDO: extrae de los capítulos)
+   ============================================================ */
+function refreshCharactersFromChapters(){
+  const status = document.getElementById('charsStatus');
+  // Recopilar nombres de todos los capítulos
+  const fromChapters = new Set();
+  state.chapters.forEach(ch => {
+    (ch.characters || []).forEach(name => {
+      const trimmed = (name || '').trim();
+      if (trimmed) fromChapters.add(trimmed);
+    });
+  });
+
+  // Conservar manuales
+  const manual = state.characters.filter(c => c.manual);
+
+  // Combinar: partir de los extraídos de capítulos
+  const merged = [];
+  fromChapters.forEach(name => {
+    const existingManual = manual.find(m => m.name.toLowerCase() === name.toLowerCase());
+    if (existingManual){
+      merged.push({ ...existingManual, name });
+    } else {
+      merged.push({ id: newCharId(), name, manual: false });
     }
+  });
+  // Añadir manuales que no aparezcan en capítulos
+  manual.forEach(m => {
+    if (!merged.some(x => x.name.toLowerCase() === m.name.toLowerCase())){
+      merged.push(m);
+    }
+  });
+
+  state.characters = merged;
+  renderCharacters();
+
+  if (fromChapters.size === 0){
+    status.className = 'status warn';
+    status.textContent = 'No se encontraron personajes en los capítulos. Añade nombres en el campo "Personajes del capítulo" o créalos manualmente.';
+  } else {
+    status.className = 'status ok';
+    status.textContent = `Se extrajeron ${fromChapters.size} personaje(s) de los capítulos.`;
   }
-  updateChecklist();
 }
 
-async function saveProject(){
-  collectFromForm();
-  const r = getCurrent(); if(!r) return;
-  if(r.status!=='published') r.status='draft';
-  try {
-    await saveReader(r);
-    const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
-    setStatus('Saved', true); toast('Project saved');
-    renderCharacters(); renderKeywords(); renderChaptersList(); updatePreview();
-  } catch(e){
-    toast('Save failed: check Supabase','error');
-  }
-}
-async function publishReader(){
-  collectFromForm();
-  const r = getCurrent(); if(!r) return;
-  if(!r.title){ toast('Title required','error'); return; }
-  if(!r.chapters.length||!r.chapters.some(c=>c.text&&c.text.trim())){ toast('Chapter content required','error'); return; }
-  r.status='published';
-  try { await saveReader(r); setStatus('Published',true); toast('Published!'); updatePreview(); }
-  catch(e){ toast('Publish failed','error'); }
-}
-async function deleteReader(){
-  if(!confirm('Delete this Reader?')) return;
-  try { await deleteReaderDB(currentId); } catch(e){ toast('Delete failed','error'); return; }
-  readers = readers.filter(x=>x.id!==currentId);
-  currentId=null; showView('List'); renderList(); toast('Deleted');
-}
-
-/* Characters */
 function renderCharacters(){
-  const r=getCurrent(); const list=document.getElementById('charList');
-  if(!r||!r.characters.length){ list.innerHTML='<p class="hint">No characters yet. Click ＋ New.</p>'; return; }
-  list.innerHTML = r.characters.map((c,i)=>'<div class="char-card" data-cid="'+c.id+'" data-photo="'+(c.photo||'')+'">'+
-    '<div class="char-photo" data-char-photo="'+i+'">'+(c.photo?'<img src="'+c.photo+'" alt="">':'📷')+'<input type="file" accept="image/*"></div>'+
-    '<div class="char-fields"><div class="char-name-row"><input type="text" data-char-name placeholder="Name" value="'+(c.name||'').replace(/"/g,'&quot;')+'">'+
-    '<button type="button" class="btn-speak" data-speak-char="'+i+'" aria-label="Pronounce">🔊</button></div>'+
-    '<textarea data-char-desc placeholder="Who is this character?">'+(c.description||'')+'</textarea></div>'+
-    '<button type="button" class="btn-icon" data-del-char="'+i+'">🗑</button></div>').join('');
-  list.querySelectorAll('[data-char-photo]').forEach(zone=>{
-    const input=zone.querySelector('input');
-    zone.onclick=e=>{ if(e.target.tagName!=='INPUT') input.click(); };
-    input.onchange=async()=>{ const f=input.files[0]; if(!f) return; const b64=await fileToBase64(f); const idx=+zone.dataset.charPhoto; r.characters[idx].photo=b64; zone.closest('.char-card').dataset.photo=b64; zone.innerHTML='<img src="'+b64+'" alt=""><input type="file" accept="image/*">'; const ni=zone.querySelector('input'); zone.onclick=e=>{if(e.target.tagName!=='INPUT')ni.click()}; ni.onchange=input.onchange; updatePreview(); };
-  });
-  list.querySelectorAll('[data-del-char]').forEach(btn=>btn.onclick=()=>{ r.characters.splice(+btn.dataset.delChar,1); renderCharacters(); updatePreview(); });
-  list.querySelectorAll('[data-speak-char]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); speak(list.querySelectorAll('[data-char-name]')[+btn.dataset.speakChar]?.value, btn); });
-  list.querySelectorAll('[data-char-name],[data-char-desc]').forEach(el=>el.oninput=()=>{ collectFromForm(); updatePreview(); });
-}
-function addCharacter(){ collectFromForm(); getCurrent().characters.push(defaultChar()); renderCharacters(); updatePreview(); }
-
-/* Keywords */
-function renderKeywords(){
-  const r = getCurrent();
-  const list = document.getElementById('kwList');
-  if (!list) return;
-  if (!r || !r.chapters[activeChapterIdx]) {
-    list.innerHTML = '<p class="hint">Select a chapter first.</p>';
+  const container = document.getElementById('charactersList');
+  if (state.characters.length === 0){
+    container.innerHTML = '<div class="empty">No hay personajes. Importa un libro o refresca desde capítulos.</div>';
     return;
   }
-  const ch = r.chapters[activeChapterIdx];
-  if (!ch.keywords) ch.keywords = [];
-  if (!ch.keywords.length) {
-    list.innerHTML = '<p class="hint">No key words for this chapter. Click ＋ Word.</p>';
+  container.innerHTML = '';
+  state.characters.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.innerHTML = `
+      <div>
+        <input type="text" value="${escapeAttr(c.name)}" style="max-width:300px" data-charid="${c.id}">
+        <div class="meta">${c.manual ? 'Manual' : 'Extraído de capítulo'}</div>
+      </div>
+      <button class="danger" data-delcharid="${c.id}">Eliminar</button>
+    `;
+    item.querySelector('input').addEventListener('input', e => {
+      const c2 = state.characters.find(x => x.id === c.id);
+      if (c2) c2.name = e.target.value;
+    });
+    item.querySelector('[data-delcharid]').addEventListener('click', () => {
+      state.characters = state.characters.filter(x => x.id !== c.id);
+      renderCharacters();
+    });
+    container.appendChild(item);
+  });
+}
+
+document.getElementById('refreshCharsBtn').addEventListener('click', refreshCharactersFromChapters);
+document.getElementById('addCharBtn').addEventListener('click', () => {
+  state.characters.push({ id: newCharId(), name: "Nuevo personaje", manual: true });
+  renderCharacters();
+});
+
+/* ============================================================
+   IMPORT (.docx) — parsea el formato del libro
+   ============================================================ */
+document.getElementById('importBtn').addEventListener('click', async () => {
+  const status = document.getElementById('importStatus');
+  const file = document.getElementById('importFile').files[0];
+  if (!file){
+    status.className = 'status err';
+    status.textContent = 'Selecciona un archivo .docx primero.';
     return;
   }
-  list.innerHTML = ch.keywords.map((kw, i) => {
-    const hasAudio = !!kw.audio;
-    return '<div class="kw-row" data-kw-idx="'+i+'">'+
-      '<div class="kw-word">'+
-      '<input type="text" data-kw-word placeholder="English word" value="'+(kw.word||'').replace(/"/g,'&quot;')+'">'+
-      '<button type="button" class="btn-icon" data-del-kw="'+i+'" title="Delete">🗑</button></div>'+
-      '<div class="kw-meta"><div><label>Meaning</label><input type="text" data-kw-meaning value="'+(kw.meaning||'').replace(/"/g,'&quot;')+'"></div>'+
-      '<div><label>IPA</label><input type="text" data-kw-ipa value="'+(kw.ipa||'').replace(/"/g,'&quot;')+'"></div></div>'+
-      '<div class="kw-actions">'+
-      '<button type="button" class="btn btn-azul btn-xs" data-gen-mean="'+i+'">📖 Meaning</button>'+
-      '<button type="button" class="btn btn-talento btn-xs" data-gen-ipa="'+i+'">🔤 IPA</button>'+
-      '<button type="button" class="btn-rec" data-kw-rec="'+i+'" style="padding:5px 10px;font-size:.75rem">🎙 Record</button>'+
-      '<label class="btn btn-ghost btn-xs" style="cursor:pointer">📁 Upload<input type="file" accept="audio/*" data-kw-file="'+i+'" style="display:none"></label>'+
-      (hasAudio ? '<audio controls src="'+kw.audio+'" style="height:28px;max-width:140px"></audio><button type="button" class="btn btn-rojo btn-xs" data-kw-del-audio="'+i+'">✕</button>' : '<span class="hint">No audio yet</span>')+
-      '</div></div>';
-  }).join('');
+  status.className = 'status';
+  status.style.display = 'block';
+  status.textContent = 'Importando...';
 
-  list.querySelectorAll('[data-del-kw]').forEach(btn => {
-    btn.onclick = () => { collectFromForm(); getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1); renderKeywords(); updatePreview(); };
-  });
-  list.querySelectorAll('[data-gen-mean]').forEach(btn => {
-    btn.onclick = async () => {
-      const idx = +btn.dataset.genMean;
-      const row = list.querySelector('[data-kw-idx="'+idx+'"]');
-      const word = (row.querySelector('[data-kw-word]').value||'').trim().toLowerCase();
-      if (!word) { toast('Type the word first','error'); return; }
-      const meanInp = row.querySelector('[data-kw-meaning]');
-      if (DICT[word]) { meanInp.value = DICT[word].m; toast('From local DICT'); }
-      else {
-        toast('Looking up API...');
-        const api = await fetchDictAPI(word);
-        if (api && api.meaning) { meanInp.value = api.meaning; toast('From API'); }
-        else { meanInp.focus(); toast('Not found','error'); }
-      }
-      collectFromForm(); updatePreview();
-    };
-  });
-  list.querySelectorAll('[data-gen-ipa]').forEach(btn => {
-    btn.onclick = async () => {
-      const idx = +btn.dataset.genIpa;
-      const row = list.querySelector('[data-kw-idx="'+idx+'"]');
-      const word = (row.querySelector('[data-kw-word]').value||'').trim().toLowerCase();
-      if (!word) { toast('Type the word first','error'); return; }
-      const ipaInp = row.querySelector('[data-kw-ipa]');
-      if (DICT[word]) { ipaInp.value = DICT[word].ipa; toast('From local DICT'); }
-      else {
-        toast('Looking up API...');
-        const api = await fetchDictAPI(word);
-        if (api && api.ipa) { ipaInp.value = api.ipa; toast('From API'); }
-        else { ipaInp.value = '/'+word+'/'; toast('Edit IPA manually','error'); }
-      }
-      collectFromForm(); updatePreview();
-    };
-  });
-  list.querySelectorAll('[data-kw-file]').forEach(inp => {
-    inp.onchange = async () => {
-      const f = inp.files[0]; if (!f) return;
-      const idx = +inp.dataset.kwFile;
-      const b64 = await fileToBase64(f);
-      collectFromForm();
-      const ch = getCurrent().chapters[activeChapterIdx];
-      if (!ch.keywords[idx]) return;
-      ch.keywords[idx].audio = b64;
-      ch.keywords[idx].audioName = f.name;
-      renderKeywords(); updatePreview(); toast('Word audio saved');
-    };
-  });
-  list.querySelectorAll('[data-kw-del-audio]').forEach(btn => {
-    btn.onclick = () => {
-      collectFromForm();
-      const ch = getCurrent().chapters[activeChapterIdx];
-      const idx = +btn.dataset.kwDelAudio;
-      if (ch.keywords[idx]) { ch.keywords[idx].audio = null; ch.keywords[idx].audioName = ''; }
-      renderKeywords(); updatePreview();
-    };
-  });
-  list.querySelectorAll('[data-kw-rec]').forEach(btn => {
-    btn.onclick = async () => {
-      const idx = +btn.dataset.kwRec;
-      if (!navigator.mediaDevices?.getUserMedia) { toast('Microphone not available','error'); return; }
-      try {
-        if (btn.classList.contains('recording') && window._kwRecorder) { window._kwRecorder.stop(); return; }
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const chunks = [];
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-        const rec = new MediaRecorder(stream, { mimeType: mime });
-        window._kwRecorder = rec;
-        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-        rec.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-          btn.classList.remove('recording');
-          window._kwRecorder = null;
-          const blob = new Blob(chunks, { type: mime });
-          const b64 = await fileToBase64(blob);
-          collectFromForm();
-          const ch = getCurrent().chapters[activeChapterIdx];
-          if (ch.keywords[idx]) { ch.keywords[idx].audio = b64; ch.keywords[idx].audioName = 'word-'+idx+'.webm'; }
-          renderKeywords(); updatePreview(); toast('Word audio saved');
-        };
-        rec.start();
-        btn.classList.add('recording');
-        toast('Recording… click Record again to stop');
-      } catch (e) { toast('Could not record','error'); }
-    };
-  });
-  list.querySelectorAll('input[type=text]').forEach(inp => {
-    inp.oninput = () => { collectFromForm(); updatePreview(); };
-  });
-}
-function addKeyword(){
-  collectFromForm();
-  const r = getCurrent();
-  if (!r || !r.chapters[activeChapterIdx]) { toast('Select a chapter first','error'); return; }
-  if (!r.chapters[activeChapterIdx].keywords) r.chapters[activeChapterIdx].keywords = [];
-  r.chapters[activeChapterIdx].keywords.push({ word:'', meaning:'', ipa:'', audio:null, audioName:'' });
-  renderKeywords(); updatePreview();
-}
-
-/* Chapters */
-function renderChaptersList(){
-  const r=getCurrent(); const list=document.getElementById('chaptersList');
-  if(!r||!r.chapters.length){ list.innerHTML='<p class="hint">No chapters yet.</p>'; return; }
-  list.innerHTML = r.chapters.map((ch,i)=>'<div class="chapter-item '+(i===activeChapterIdx?'active':'')+'" data-idx="'+i+'"><span class="num">'+(i+1)+'</span><span class="title">'+(ch.title||'Untitled')+'</span><button type="button" class="btn-icon" data-del-ch="'+i+'">🗑</button></div>').join('');
-  list.querySelectorAll('.chapter-item').forEach(item=>item.onclick=e=>{
-    if(e.target.closest('[data-del-ch]')) return;
-    collectFromForm(); activeChapterIdx=+item.dataset.idx; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview();
-  });
-  list.querySelectorAll('[data-del-ch]').forEach(btn=>btn.onclick=e=>{
-    e.stopPropagation(); if(!confirm('Delete this chapter?')) return;
-    r.chapters.splice(+btn.dataset.delCh,1);
-    if(activeChapterIdx>=r.chapters.length) activeChapterIdx=Math.max(0,r.chapters.length-1);
-    if(r.chapters.length) loadChapterEditor(activeChapterIdx); else document.getElementById('chapterEditor').style.display='none';
-    renderChaptersList(); updatePreview();
-  });
-}
-function loadChapterEditor(idx){
-  const r=getCurrent(); if(!r||!r.chapters[idx]){ document.getElementById('chapterEditor').style.display='none'; return; }
-  activeChapterIdx=idx; const ch=r.chapters[idx];
-  document.getElementById('chapterEditor').style.display='block';
-  document.getElementById('chTitle').value=ch.title||'';
-  document.getElementById('chText').value=ch.text||'';
-  if(ch.image){ document.getElementById('chImgPreview').style.display='block'; document.getElementById('chImg').src=ch.image; }
-  else document.getElementById('chImgPreview').style.display='none';
-  const audioBox=document.getElementById('chAudioBox'), wrap=document.getElementById('chAudioPlayerWrap'), player=document.getElementById('chAudioPlayer'), name=document.getElementById('chAudioName');
-  if(ch.audio){ player.src=ch.audio; name.textContent=ch.audioName||'Audio'; wrap.style.display='block'; audioBox.classList.add('has-audio'); document.getElementById('chAudioZone').style.display='none'; }
-  else { player.removeAttribute('src'); player.load(); wrap.style.display='none'; audioBox.classList.remove('has-audio'); document.getElementById('chAudioZone').style.display='block'; }
-  if(!Array.isArray(ch.questions)) ch.questions=[];
-  ch.questions = ch.questions.map(item=>{
-    if(typeof item==='string') return {q:item,options:['','',''],correct:0};
-    return {q:item.q||'', options:[item.options?.[0]||'',item.options?.[1]||'',item.options?.[2]||''], correct:+item.correct||0};
-  });
-  renderKeywords();
-  renderQuestionsEditor(ch);
-}
-function renderQuestionsEditor(ch){
-  const qList=document.getElementById('questionsList'); qList.innerHTML='';
-  (ch.questions||[]).forEach((item,i)=>{
-    const card=document.createElement('div'); card.className='mcq-card';
-    const opts=item.options||['','','']; const correct=+item.correct||0;
-    card.innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong style="font-size:.78rem;color:var(--talento)">Question '+(i+1)+'</strong><button type="button" class="btn-icon" data-del-q="'+i+'">🗑</button></div>'+
-      '<input class="mcq-q" type="text" data-mcq-q value="'+(item.q||'').replace(/"/g,'&quot;')+'" placeholder="Pregunta...">'+
-      [0,1,2].map(oi=>'<div class="mcq-opt"><input type="radio" name="mcq-c-'+i+'" data-mcq-correct value="'+oi+'" '+(correct===oi?'checked':'')+'><label>OK</label><input type="text" data-mcq-opt="'+oi+'" value="'+(opts[oi]||'').replace(/"/g,'&quot;')+'" placeholder="Option '+(oi+1)+'"></div>').join('');
-    qList.appendChild(card);
-  });
-  qList.querySelectorAll('[data-del-q]').forEach(btn=>btn.onclick=()=>{ collectFromForm(); getCurrent().chapters[activeChapterIdx].questions.splice(+btn.dataset.delQ,1); renderQuestionsEditor(getCurrent().chapters[activeChapterIdx]); updatePreview(); });
-  qList.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{collectFromForm();updatePreview()}; inp.onchange=()=>{collectFromForm();updatePreview()}; });
-}
-function addChapter(){ collectFromForm(); const r=getCurrent(); r.chapters.push(defaultChapter(r.chapters.length+1)); activeChapterIdx=r.chapters.length-1; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview(); }
-
-function setupImg(zoneId,inputId,previewId,imgId,removeId,onSet){
-  const zone=document.getElementById(zoneId), input=document.getElementById(inputId), preview=document.getElementById(previewId), img=document.getElementById(imgId);
-  zone.onclick=()=>input.click();
-  zone.ondragover=e=>{e.preventDefault();zone.classList.add('dragover')}; zone.ondragleave=()=>zone.classList.remove('dragover');
-  zone.ondrop=async e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; }};
-  input.onchange=async()=>{ const f=input.files[0]; if(f){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; }};
-  document.getElementById(removeId).onclick=e=>{ e.stopPropagation(); onSet(null); img.src=''; preview.style.display='none'; input.value=''; };
-}
-
-/* Preview */
-function updatePreview(){
-  collectFromForm();
-  const r=getCurrent(); const area=document.getElementById('previewArea');
-  if(!r){ area.innerHTML='<p class="hint">No reader selected.</p>'; return; }
-  let html='';
-  if(r.coverImage) html+='<div class="book-cover-preview has-img"><img src="'+r.coverImage+'" alt=""><div class="cover-overlay"><h2>'+escapeHtml(r.title||'Untitled')+'</h2><span class="level-badge">'+r.level+'</span></div></div>';
-  else html+='<div class="book-cover-preview"><h2>'+escapeHtml(r.title||'Untitled')+'</h2><p style="opacity:.8">'+r.level+' · Jotavalenzuela</p></div>';
-
-  if(r.characters?.length){
-    html+='<div style="font-weight:800;color:var(--azul);margin-bottom:8px">👥 Characters</div><div class="chars-preview">';
-    r.characters.forEach(c=>{
-      if(!c.name&&!c.description) return;
-      html+='<div class="char-preview-card"><div class="avatar">'+(c.photo?'<img src="'+c.photo+'" alt="">':'👤')+'</div><div class="name-row"><h4>'+escapeHtml(c.name||'—')+'</h4>'+
-        (c.name?'<button type="button" class="btn-speak" data-preview-speak="'+escapeHtml(c.name)+'" aria-label="Listen">🔊</button>':'')+'</div><p>'+escapeHtml(c.description||'')+'</p></div>';
-    });
-    html+='</div>';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    const text = result.value;
+    parseDocxText(text);
+    status.className = 'status ok';
+    status.textContent = 'Libro importado correctamente. Revisa los tabs Book, Chapters y Characters.';
+  } catch (err){
+    console.error(err);
+    status.className = 'status err';
+    status.textContent = 'Error al importar: ' + err.message;
   }
-  r.chapters.forEach((ch,i)=>{
-    html+='<div class="chapter-preview" data-preview-ch="'+i+'"><h3>'+escapeHtml(ch.title||('Chapter '+(i+1)))+'</h3>';
-    if(ch.image) html+='<img class="chapter-img" src="'+ch.image+'" alt="">';
-    if(ch.audio) html+='<div class="audio-player"><span style="font-size:.75rem;font-weight:800;color:var(--verde)">🎧 Teacher</span><audio controls src="'+ch.audio+'"></audio></div>';
-    html+='<div class="reader-rec-bar"><span style="font-size:.78rem;font-weight:800;color:#92400e">🎤 Your voice</span>'+
-      '<button type="button" class="btn-rec" data-learner-rec="'+i+'">🎙 Record voice</button>'+
-      '<button type="button" class="btn btn-verde btn-xs" data-learner-save="'+i+'" style="display:none">💾 Save voice</button>'+
-      '<span data-learner-timer="'+i+'" style="display:none;font-weight:700;color:#b91c1c">0:00</span>'+
-      (ch.learnerAudio?'<audio controls src="'+ch.learnerAudio+'" style="max-width:200px;height:32px"></audio><button type="button" class="btn btn-rojo btn-xs" data-learner-del="'+i+'">✕</button>':'')+
-      '</div>';
-    const chKws=(ch.keywords||[]).filter(k=>k.word);
-    if(chKws.length){
-      const isOpen = viewMode !== 'student';
-      html+='<details class="kw-preview-block"'+(isOpen?' open':'')+'>'
-          +'<summary>🔑 Key words for this chapter <span style="font-weight:600;color:var(--gris);font-size:.75rem">('+chKws.length+')</span></summary>'
-          +'<div class="kw-inner">';
-      chKws.forEach(k=>{
-        html+='<div class="kw-preview-item"><strong>'+escapeHtml(k.word)+'</strong>';
-        if(k.ipa) html+=' <span class="ipa">'+escapeHtml(k.ipa)+'</span>';
-        if(k.meaning) html+=' — '+escapeHtml(k.meaning);
-        if(k.audio) html+=' <audio controls src="'+k.audio+'" style="height:28px;vertical-align:middle;max-width:120px;margin-left:6px"></audio>';
-        html+='</div>';
-      });
-      html+='</div></details>';
-    }
-    html+='<div class="chapter-text">'+(escapeHtml(ch.text)||'<em style="color:#9ca3af">(No text yet)</em>')+'</div>';
-    const qItems=(ch.questions||[]).filter(item=>typeof item==='string'?item.trim():(item&&item.q&&item.q.trim()));
-    if(qItems.length){
-      html+='<div class="questions-block"><h4 style="font-size:.8rem;color:var(--talento);margin-bottom:8px">Comprehension</h4>';
-      qItems.forEach((item,qi)=>{
-        if(typeof item==='string'){ html+='<div><strong>'+(qi+1)+'.</strong> '+escapeHtml(item)+'</div>'; return; }
-        html+='<div class="preview-mcq" data-mcq-ch="'+i+'" data-mcq-qi="'+qi+'"><strong>'+(qi+1)+'. '+escapeHtml(item.q)+'</strong>';
-        (item.options||[]).forEach((opt,oi)=>{
-          if(!opt) return;
-          if(viewMode==='student'){
-            html+='<label class="student-opt" data-ch="'+i+'" data-qi="'+qi+'" data-oi="'+oi+'" data-correct="'+item.correct+'"><input type="radio" name="s-'+i+'-'+qi+'" style="margin-right:8px">'+escapeHtml(opt)+'</label>';
-          } else {
-            const isC=oi===item.correct;
-            html+='<div class="opt'+(isC?' correct':'')+'">'+(isC?'✓ ':'○ ')+escapeHtml(opt)+(isC?' (correcta)':'')+'</div>';
-          }
-        });
-        html+='</div>';
-      });
-      if(viewMode==='student') html+='<button type="button" class="btn btn-azul btn-mini" data-check-ch="'+i+'" style="margin-top:8px">Check answers</button><div data-result-ch="'+i+'" class="hint" style="margin-top:6px"></div>';
-      html+='</div>';
-    }
-    html+='</div>';
-  });
-  area.innerHTML=html||'<p class="hint">Add content to preview.</p>';
-  area.querySelectorAll('[data-preview-speak]').forEach(btn=>btn.onclick=()=>speak(btn.dataset.previewSpeak, btn));
-  bindLearnerRec(area);
-  if(viewMode==='student'){
-    area.querySelectorAll('.student-opt').forEach(lab=>lab.onclick=()=>{
-      area.querySelectorAll('.student-opt[data-ch="'+lab.dataset.ch+'"][data-qi="'+lab.dataset.qi+'"]').forEach(x=>x.classList.remove('selected'));
-      lab.classList.add('selected');
-    });
-    area.querySelectorAll('[data-check-ch]').forEach(btn=>btn.onclick=()=>{
-      const chi=+btn.dataset.checkCh;
-      let ok=0, total=0;
-      area.querySelectorAll('.preview-mcq[data-mcq-ch="'+chi+'"]').forEach(block=>{
-        total++;
-        const sel=block.querySelector('.student-opt.selected');
-        block.querySelectorAll('.student-opt').forEach(o=>{ o.classList.remove('right','wrong'); });
-        if(sel){
-          if(+sel.dataset.oi===+sel.dataset.correct){ sel.classList.add('right'); ok++; }
-          else {
-            sel.classList.add('wrong');
-            const right=block.querySelector('.student-opt[data-oi="'+sel.dataset.correct+'"]');
-            if(right) right.classList.add('right');
-          }
-        }
-      });
-      const res=area.querySelector('[data-result-ch="'+chi+'"]');
-      if(res) res.textContent = 'Score: '+ok+' / '+total;
-    });
-  }
-}
-
-let learnerRec=null, learnerChunks=[], learnerIv=null, learnerSec=0, pendingBlob=null, pendingIdx=null;
-function bindLearnerRec(area){
-  area.querySelectorAll('[data-learner-rec]').forEach(btn=>{
-    btn.onclick=async()=>{
-      const idx=+btn.dataset.learnerRec;
-      if(!navigator.mediaDevices?.getUserMedia){ toast('Microphone not available','error'); return; }
-      try{
-        if(learnerRec&&learnerRec.state==='recording'){ learnerRec.stop(); return; }
-        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-        learnerChunks=[];
-        const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
-        learnerRec=new MediaRecorder(stream,{mimeType:mime});
-        learnerRec.ondataavailable=e=>{ if(e.data.size) learnerChunks.push(e.data); };
-        learnerRec.onstop=()=>{
-          stream.getTracks().forEach(t=>t.stop());
-          pendingBlob=new Blob(learnerChunks,{type:mime}); pendingIdx=idx;
-          clearInterval(learnerIv); btn.classList.remove('recording');
-          const save=area.querySelector('[data-learner-save="'+idx+'"]');
-          const timer=area.querySelector('[data-learner-timer="'+idx+'"]');
-          if(save) save.style.display=''; if(timer) timer.style.display='none';
-          toast('Ready. Click Save voice');
-        };
-        learnerRec.start(); learnerSec=0; btn.classList.add('recording');
-        const timer=area.querySelector('[data-learner-timer="'+idx+'"]');
-        if(timer){ timer.style.display=''; timer.textContent='0:00'; }
-        learnerIv=setInterval(()=>{ learnerSec++; if(timer) timer.textContent=Math.floor(learnerSec/60)+':'+String(learnerSec%60).padStart(2,'0'); },1000);
-        toast('Recording… click again to stop');
-      }catch(e){ toast('Could not record','error'); }
-    };
-  });
-  area.querySelectorAll('[data-learner-save]').forEach(btn=>btn.onclick=async()=>{
-    const idx=+btn.dataset.learnerSave;
-    if(!pendingBlob||pendingIdx!==idx){ toast('No recording pending','error'); return; }
-    const b64=await fileToBase64(pendingBlob);
-    const r=getCurrent();
-    if(r&&r.chapters[idx]){
-      r.chapters[idx].learnerAudio=b64; r.chapters[idx].learnerAudioName='voz-lector.webm';
-      try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
-      updatePreview(); toast('Voice saved');
-    }
-    pendingBlob=null; pendingIdx=null;
-  });
-  area.querySelectorAll('[data-learner-del]').forEach(btn=>btn.onclick=async()=>{
-    const idx=+btn.dataset.learnerDel; const r=getCurrent();
-    if(r&&r.chapters[idx]){
-      r.chapters[idx].learnerAudio=null;
-      try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
-      updatePreview();
-    }
-  });
-}
-
-/* Teacher record */
-let mediaRecorder=null, recChunks=[], recIv=null, recSec=0;
-document.getElementById('btnRecord').onclick=async()=>{
-  if(!navigator.mediaDevices?.getUserMedia){ toast('Microphone not available','error'); return; }
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    recChunks=[];
-    const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
-    mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
-    mediaRecorder.ondataavailable=e=>{ if(e.data.size) recChunks.push(e.data); };
-    mediaRecorder.onstop=async()=>{
-      stream.getTracks().forEach(t=>t.stop());
-      const blob=new Blob(recChunks,{type:mime});
-      await setChapterAudio(blob, 'mi-voz-cap'+(activeChapterIdx+1)+'.webm');
-      document.getElementById('btnRecord').classList.remove('recording');
-      document.getElementById('btnRecord').style.display='';
-      document.getElementById('btnStopRec').style.display='none';
-      document.getElementById('recTimer').style.display='none';
-      clearInterval(recIv);
-    };
-    mediaRecorder.start(); recSec=0;
-    document.getElementById('btnRecord').classList.add('recording');
-    document.getElementById('btnRecord').style.display='none';
-    document.getElementById('btnStopRec').style.display='';
-    document.getElementById('recTimer').style.display='';
-    recIv=setInterval(()=>{ recSec++; document.getElementById('recTimer').textContent=Math.floor(recSec/60)+':'+String(recSec%60).padStart(2,'0'); },1000);
-  }catch(e){ toast('Microphone unavailable','error'); }
-};
-document.getElementById('btnStopRec').onclick=()=>{ if(mediaRecorder?.state==='recording') mediaRecorder.stop(); };
-
-async function setChapterAudio(fileOrBlob, displayName){
-  if((fileOrBlob.size||0)>5*1024*1024 && !confirm('Large file (>5MB). Continue?')) return;
-  const b64=await fileToBase64(fileOrBlob);
-  const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return;
-  r.chapters[activeChapterIdx].audio=b64;
-  r.chapters[activeChapterIdx].audioName=displayName||fileOrBlob.name||'audio.webm';
-  const player=document.getElementById('chAudioPlayer');
-  player.src=b64; document.getElementById('chAudioName').textContent=r.chapters[activeChapterIdx].audioName;
-  document.getElementById('chAudioPlayerWrap').style.display='block';
-  document.getElementById('chAudioBox').classList.add('has-audio');
-  document.getElementById('chAudioZone').style.display='none';
-  updatePreview(); toast('Chapter audio ready');
-}
-document.getElementById('chAudioZone').onclick=()=>document.getElementById('chAudioInput').click();
-document.getElementById('chAudioInput').onchange=async()=>{ const f=document.getElementById('chAudioInput').files[0]; if(f) await setChapterAudio(f); };
-document.getElementById('removeChAudio').onclick=()=>{
-  const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return;
-  r.chapters[activeChapterIdx].audio=null; r.chapters[activeChapterIdx].audioName='';
-  document.getElementById('chAudioPlayer').removeAttribute('src');
-  document.getElementById('chAudioPlayerWrap').style.display='none';
-  document.getElementById('chAudioBox').classList.remove('has-audio');
-  document.getElementById('chAudioZone').style.display='block';
-  updatePreview();
-};
-
-/* Import */
-let importText='';
-const importZone=document.getElementById('importZone'), importInput=document.getElementById('importInput');
-importZone.onclick=()=>importInput.click();
-importZone.ondragover=e=>{e.preventDefault();importZone.classList.add('dragover')};
-importZone.ondragleave=()=>importZone.classList.remove('dragover');
-importZone.ondrop=async e=>{ e.preventDefault(); importZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) await loadImportFile(e.dataTransfer.files[0]); };
-importInput.onchange=async()=>{ if(importInput.files[0]) await loadImportFile(importInput.files[0]); };
-document.getElementById('btnClearImport').onclick=()=>{ importText=''; importInput.value=''; document.getElementById('importFileName').style.display='none'; document.getElementById('btnTrasladar').disabled=true; document.getElementById('btnClearImport').style.display='none'; document.getElementById('importStatus').textContent=''; pendingImport=null; };
-
-async function loadImportFile(file){
-  const name=file.name||''; const lower=name.toLowerCase();
-  document.getElementById('importStatus').textContent='Reading…';
-  document.getElementById('btnTrasladar').disabled=true;
-  try{
-    if(lower.endsWith('.docx')){
-      const ab=await file.arrayBuffer();
-      const result=await mammoth.extractRawText({arrayBuffer:ab});
-      importText=result.value||'';
-    } else if(lower.endsWith('.pdf')){
-      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const ab=await file.arrayBuffer();
-      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
-      let t='';
-      for(let i=1;i<=pdf.numPages;i++){ const page=await pdf.getPage(i); const c=await page.getTextContent(); t+=c.items.map(x=>x.str).join(' ')+'\n\n'; }
-      importText=t;
-    } else throw new Error('Use PDF or DOCX');
-    document.getElementById('importFileName').style.display='block';
-    document.getElementById('importFileName').textContent='📎 '+name;
-    document.getElementById('btnTrasladar').disabled=!importText.trim();
-    document.getElementById('btnClearImport').style.display='';
-    document.getElementById('importStatus').textContent=importText.trim()?'Listo para trasladar (verás un resumen).':'No text yet';
-    toast('File loaded');
-  }catch(err){ document.getElementById('importStatus').textContent='Error: '+(err.message||''); toast('Could not read file','error'); }
-}
-
-function parseImport(raw){
-  const text=(raw||'').replace(/\r/g,'\n');
-  const re=/(?:^|\n)\s*((?:CHAPTER|Chapter|Capítulo|CAPÍTULO)\s*(\d+)\s*[–\-:.]?\s*([^\n]*))/gi;
-  const matches=[]; let m;
-  while((m=re.exec(text))) matches.push({index:m.index, full:m[1], num:+m[2], title:(m[3]||'').trim()});
-  let title='';
-  for(const line of text.split('\n').map(l=>l.trim()).filter(Boolean).slice(0,20)){
-    if(/^(CHAPTER|Chapter|Capítulo)\s*\d+/i.test(line)) break;
-    if(/^(table of contents|glossary|main characters|about this)/i.test(line)) continue;
-    if(line.length>3&&line.length<120){ title=line; break; }
-  }
-  const chapters=[];
-  if(matches.length){
-    for(let i=0;i<matches.length;i++){
-      const start=matches[i].index, end=i+1<matches.length?matches[i+1].index:text.length;
-      let body=text.slice(start,end).replace(/^(?:CHAPTER|Chapter|Capítulo|CAPÍTULO)\s*\d+\s*[–\-:.]?\s*[^\n]*/i,'').trim();
-      const qs=extractQuestions(body);
-      body=body.replace(/\n?\s*Comprehension Questions?[\s\S]*$/i,'').trim();
-      chapters.push({ title:matches[i].full.replace(/\s+/g,' ').trim(), text:body, questions:qs });
-    }
-  } else chapters.push({ title:'Chapter 1', text:text.trim(), questions:extractQuestions(text) });
-  return { title, chapters, keywords:extractKeywords(text) };
-}
-function extractKeywords(text){
-  const found=[], seen=new Set();
-  const blockRe=/(?:Key Words?|Glossary|Palabras clave|Vocabulary)[:\s]*([\s\S]{0,2500}?)(?=\n\s*(?:CHAPTER|Chapter|Capítulo|Comprehension|Main Characters|Grammar|$))/i;
-  const block=text.match(blockRe); const chunk=block?block[1]:text;
-  const lineRe=/^\s*([A-Za-z][A-Za-z'-]{1,30})\s*[—–\-:]\s*(.+)$/gm; let m;
-  while((m=lineRe.exec(chunk))){
-    const w=m[1].toLowerCase(); if(seen.has(w)) continue; seen.add(w);
-    const meaning=m[2].trim().replace(/\s+/g,' ').slice(0,160);
-    const d=DICT[w]; found.push({ word:m[1], meaning:meaning||(d?d.m:''), ipa:d?d.ipa:'' });
-    if(found.length>=40) break;
-  }
-  Object.keys(DICT).forEach(w=>{ if(seen.has(w)) return; if(new RegExp('\\b'+w+'\\b','i').test(text)){ seen.add(w); found.push({word:w, meaning:DICT[w].m, ipa:DICT[w].ipa}); }});
-  return found.slice(0,40);
-}
-function extractQuestions(body){
-  const qs=[]; const idx=body.search(/Comprehension Questions?|Preguntas de comprensión/i);
-  const slice=idx>=0?body.slice(idx):body;
-  const qRe=/(?:^|\n)\s*(\d+)[.)]\s+([^\n?]+\??)/g; let m;
-  while((m=qRe.exec(slice))){ const q=m[2].trim(); if(q.length<8) continue; qs.push(autoMcq(q)); if(qs.length>=5) break; }
-  return qs;
-}
-function autoMcq(q){
-  const lower=q.toLowerCase(); let options;
-  if(/where|castle|wall/.test(lower)) options=['On the castle walls','In the market','At the school'];
-  else if(/who|ghost|father/.test(lower)) options=["Hamlet's father (the Ghost)",'Horatio only','A stranger'];
-  else if(/why|angry|mother|uncle/.test(lower)) options=['Because his mother married Claudius quickly','Because he lost a game','Because he was tired'];
-  else if(/secret|poison|murder/.test(lower)) options=['Claudius murdered the old king with poison','Hamlet left Denmark','Ophelia wrote a letter'];
-  else if(/revenge|must/.test(lower)) options=['Take revenge on Claudius, but not hurt Gertrude','Leave the country','Become advisor'];
-  else if(/mad|pretend/.test(lower)) options=['So Claudius will not suspect him','To make Ophelia laugh','To win a prize'];
-  else if(/play|actors|conscience/.test(lower)) options=["To watch Claudius's reaction",'To entertain the guards','To teach English'];
-  else if(/ophelia|drown/.test(lower)) options=['She goes mad and later drowns','She becomes queen','She leaves for France'];
-  else if(/duel|die|end/.test(lower)) options=['Almost everyone dies after the poisoned duel','Hamlet becomes a teacher','Claudius leaves happily'];
-  else options=['According to the story','Something unrelated','The opposite of the text'];
-  return { q, options, correct:0 };
-}
-
-document.getElementById('btnTrasladar').onclick=()=>{
-  if(!importText.trim()){ toast('No text yet','error'); return; }
-  pendingImport=parseImport(importText);
-  const ul=document.getElementById('importSummary');
-  ul.innerHTML='<li><strong>Title:</strong> '+(pendingImport.title||'(not detected)')+'</li>'+
-    '<li><strong>Chapters:</strong> '+pendingImport.chapters.length+'</li>'+
-    '<li><strong>Key words:</strong> '+(pendingImport.keywords||[]).length+'</li>'+
-    '<li><strong>MCQ questions detected:</strong> '+pendingImport.chapters.reduce((n,c)=>n+(c.questions||[]).length,0)+'</li>'+
-    '<li class="hint">You can edit everything later in the Work Panel.</li>';
-  document.getElementById('importModal').classList.add('show');
-};
-document.getElementById('btnImportCancel').onclick=()=>document.getElementById('importModal').classList.remove('show');
-document.getElementById('btnImportConfirm').onclick=async()=>{
-  document.getElementById('importModal').classList.remove('show');
-  const r=getCurrent(); if(!r||!pendingImport) return;
-  if(pendingImport.title){ r.title=pendingImport.title; document.getElementById('fieldTitle').value=pendingImport.title; }
-  r.chapters=pendingImport.chapters.map((ch,i)=>{
-    const base=defaultChapter(i+1);
-    base.title=ch.title||('Chapter '+(i+1));
-    base.text=ch.text||'';
-    if(ch.questions?.length) base.questions=ch.questions;
-    return base;
-  });
-  if(pendingImport.keywords?.length){
-    const kws = pendingImport.keywords;
-    r.chapters.forEach((ch) => {
-      const inText = kws.filter(k => ch.text && new RegExp('\\b'+k.word+'\\b','i').test(ch.text));
-      ch.keywords = (inText.length ? inText : kws).map(k => ({ word:k.word, meaning:k.meaning, ipa:k.ipa, audio:null, audioName:'' }));
-    });
-  }
-  renderKeywords();
-  activeChapterIdx=0; renderChaptersList(); loadChapterEditor(0); updateChecklist(); updatePreview();
-  try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
-  document.querySelector('[data-tab="capitulos"]').click();
-  document.getElementById('importStatus').textContent='Applied: '+r.chapters.length+' chapter(s).';
-  toast('Import applied to panel');
-  pendingImport=null;
-};
-
-/* Init */
-document.getElementById('btnNewReader').onclick=createNewReader;
-document.getElementById('btnBack').onclick=async()=>{ collectFromForm(); await saveProject(); showView('List'); renderList(); };
-document.getElementById('btnBackToList').onclick=async()=>{ collectFromForm(); await saveProject(); showView('List'); renderList(); };
-document.getElementById('btnSave').onclick=saveProject;
-document.getElementById('btnPublish').onclick=publishReader;
-document.getElementById('btnDelete').onclick=deleteReader;
-document.getElementById('btnAddChar').onclick=addCharacter;
-document.getElementById('btnAddKeyword').onclick=addKeyword;
-document.getElementById('btnAddChapter').onclick=addChapter;
-document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return; r.chapters[activeChapterIdx].questions.push({q:'',options:['','',''],correct:0}); renderQuestionsEditor(r.chapters[activeChapterIdx]); updatePreview(); };
-['fieldTitle','fieldLevel','chTitle','chText'].forEach(id=>{
-  document.getElementById(id).oninput=()=>{ collectFromForm(); if(id==='chTitle'||id==='fieldTitle') renderChaptersList(); updatePreview(); };
 });
-setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover', b64=>{ const r=getCurrent(); if(r){ r.coverImage=b64; updatePreview(); }});
-setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
 
-loadAll().then(()=>{
-  try{
-    const legacy=localStorage.getItem('jv_readers_data_v3');
-    if(legacy && !readers.length){
-      const arr=JSON.parse(legacy);
-      if(Array.isArray(arr)&&arr.length){
-        readers=arr;
-        arr.forEach(r=>saveReader(r));
-        toast('Projects migrated from previous storage');
+function parseDocxText(raw){
+  // Normalizar saltos
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+  // Reset
+  state.book = { title:"", level:"A2", info:"", infoImage:null, backCoverImage:null };
+  state.chapters = [];
+  state.characters = [];
+
+  let current = null;        // capítulo actual
+  let section = null;        // 'chars' | 'text' | 'kw' | 'questions'
+  let currentTitleSeen = false;
+
+  const pushChapter = () => {
+    if (current) state.chapters.push(current);
+  };
+
+  const newChapter = (title) => ({
+    id: uid('ch'),
+    title: title || "",
+    characters: [],
+    text: "",
+    keyWords: [],
+    questions: []
+  });
+
+  for (let i = 0; i < lines.length; i++){
+    const line = lines[i];
+
+    // Título del libro (primera línea significativa antes de "Level")
+    if (!currentTitleSeen && /^level\b/i.test(line) === false && !/^chapter\b/i.test(line) && state.chapters.length === 0 && !state.book.title){
+      // Si la línea no es "Level" ni "Chapter", asumimos título
+      if (!/^level/i.test(line) && !/^chapter/i.test(line)){
+        state.book.title = stripFormatting(line);
+        currentTitleSeen = true;
+        continue;
       }
     }
-  }catch(e){}
-  renderList();
-}).catch(e=>{
-  console.error(e);
-  toast('Could not connect to Supabase','error');
-  renderList();
+
+    // Level
+    const levelMatch = line.match(/^Level\s*(A2|B1|B2|C1)/i);
+    if (levelMatch){
+      state.book.level = levelMatch[1].toUpperCase();
+      currentTitleSeen = true;
+      continue;
+    }
+
+    // Chapter
+    const chapMatch = line.match(/^Chapter\s+(\d+)\s*[–\-—]\s*(.+)$/i)
+                   || line.match(/^Chapter\s+(\d+)\s*[–\-—]?\s*(.*)$/i);
+    if (chapMatch){
+      pushChapter();
+      current = newChapter(stripFormatting(chapMatch[2] || ''));
+      section = null;
+      continue;
+    }
+
+    if (!current){
+      // Información del libro previa a capítulos (si hay)
+      if (line && !state.book.info){
+        // ignorar líneas de "Characters in this chapter" sin capítulo
+      }
+      continue;
+    }
+
+    // Characters in this chapter
+    const charHeader = line.match(/^Characters in this chapter\s*:?\s*(.*)$/i);
+    if (charHeader){
+      section = 'chars';
+      const inline = charHeader[1];
+      if (inline){
+        parseCharacterList(inline).forEach(n => current.characters.push(n));
+      }
+      continue;
+    }
+
+    // Key Words
+    if (/^Key\s*Words/i.test(line)){
+      section = 'kw';
+      continue;
+    }
+
+    // Comprehension Questions
+    if (/^Comprehension\s*Questions/i.test(line)){
+      section = 'questions';
+      continue;
+    }
+
+    // Contenido según sección
+    if (section === 'chars'){
+      // Los personajes pueden venir en la misma línea separados por comas
+      // o en líneas posteriores hasta que aparezca otra sección
+      parseCharacterList(line).forEach(n => current.characters.push(n));
+      continue;
+    }
+    if (section === 'kw'){
+      // Formato: word --- definition  ó  word — definition
+      const kwMatch = line.match(/^(.+?)\s*(?:---|—|–)\s*(.+)$/);
+      if (kwMatch){
+        current.keyWords.push({ word: kwMatch[1].trim(), def: kwMatch[2].trim() });
+      }
+      continue;
+    }
+    if (section === 'questions'){
+      const qMatch = line.match(/^\d+[\.\)]\s*(.+)$/);
+      if (qMatch){
+        current.questions.push(qMatch[1].trim());
+      }
+      continue;
+    }
+
+    // Texto del capítulo (por defecto)
+    if (!section || section === 'text'){
+      section = 'text';
+      // Ignorar líneas que sean solo títulos de sección ya tratados
+      if (/^Characters in this chapter/i.test(line)) continue;
+      current.text += (current.text ? "\n\n" : "") + line;
+    }
+  }
+  pushChapter();
+
+  // Si no se detectó título, usar nombre de archivo o genérico
+  if (!state.book.title) state.book.title = "Untitled Book";
+
+  // Si no hay capítulos pero hay texto suelto, crear uno
+  if (state.chapters.length === 0){
+    // Buscar si hay texto después de "Level"
+    state.chapters.push(newChapter("Chapter 1"));
+  }
+
+  // Refrescar UI
+  document.getElementById('bookTitle').value = state.book.title;
+  document.getElementById('bookLevel').value = state.book.level;
+  document.getElementById('bookInfo').value = state.book.info || "";
+  renderChapters();
+  refreshCharactersFromChapters();
+}
+
+function parseCharacterList(str){
+  // Divide por comas, punto y coma, "and", "y"
+  return str
+    .split(/,|;|\band\b|\by\b/i)
+    .map(s => stripFormatting(s))
+    .map(s => s.replace(/^[\-\u2022\*\s]+/, '').trim())
+    .filter(s => s.length > 0 && s.length < 60);
+}
+
+function stripFormatting(s){
+  // Quitar markdown tipo *texto* o **texto**
+  return (s || '').replace(/\*+/g, '').trim();
+}
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+function renderExportPreview(){
+  const preview = document.getElementById('exportPreview');
+  preview.textContent = buildText();
+}
+
+function buildText(){
+  let out = '';
+  out += state.book.title + "\n\n";
+  out += "Level " + state.book.level + "\n\n";
+  if (state.book.info) out += state.book.info + "\n\n";
+
+  state.chapters.forEach((ch, i) => {
+    out += `Chapter ${i+1} – ${ch.title || ''}\n\n`;
+    out += `Characters in this chapter: ${ch.characters.filter(Boolean).join(', ')}\n\n`;
+    out += (ch.text || '') + "\n\n";
+    out += "Key Words\n\n";
+    ch.keyWords.forEach(kw => {
+      if (kw.word || kw.def) out += `${kw.word} --- ${kw.def}\n`;
+    });
+    out += "\nComprehension Questions\n\n";
+    ch.questions.forEach((q, qi) => {
+      if (q) out += `${qi+1}. ${q}\n`;
+    });
+    out += "\n";
+  });
+  return out;
+}
+
+document.getElementById('exportJsonBtn').addEventListener('click', () => {
+  const data = JSON.stringify({ book: state.book, chapters: state.chapters, characters: state.characters }, null, 2);
+  downloadFile((state.book.title || 'book') + '.json', data, 'application/json');
 });
+
+document.getElementById('exportTxtBtn').addEventListener('click', () => {
+  downloadFile((state.book.title || 'book') + '.txt', buildText(), 'text/plain');
+});
+
+function downloadFile(name, content, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function escapeHtml(s){
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(s){
+  return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+renderChapters();
+renderCharacters();
 </script>
-
-</body></html>
+</body>
+</html>
