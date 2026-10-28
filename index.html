@@ -6,6 +6,7 @@
 <title>Readers · Panel de Trabajo | Jotavalenzuela</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --azul:#004A8F; --azul-medio:#0066CC; --azul-claro:#E6F0FA;
@@ -127,9 +128,18 @@ button,input,select,textarea{font-family:inherit}
 .char-preview-card .name-row{display:flex;align-items:center;justify-content:center;gap:6px}
 .char-preview-card h4{font-size:.86rem;color:var(--azul);font-weight:800}
 .char-preview-card p{font-size:.72rem;color:var(--gris)}
-.kw-preview-block{background:#f0f9ff;border-radius:12px;padding:14px;margin-bottom:18px;border-left:4px solid var(--azul-medio)}
+
+/* === Key words collapsible === */
+.kw-preview-block{background:#f0f9ff;border-radius:12px;margin-bottom:18px;border-left:4px solid var(--azul-medio);padding:0;overflow:hidden}
+.kw-preview-block > summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:.82rem;font-weight:800;color:var(--azul);display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s}
+.kw-preview-block > summary::-webkit-details-marker{display:none}
+.kw-preview-block > summary::after{content:'▸';margin-left:auto;color:var(--azul-medio);font-size:.9rem;transition:transform .2s}
+.kw-preview-block[open] > summary::after{transform:rotate(90deg)}
+.kw-preview-block > summary:hover{background:#e0f2fe}
+.kw-preview-block .kw-inner{padding:0 14px 14px}
 .kw-preview-item{display:flex;align-items:center;gap:8px;font-size:.86rem;margin-bottom:6px;flex-wrap:wrap}
 .kw-preview-item .ipa{color:var(--talento);font-family:monospace}
+
 .chapter-preview{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:18px;margin-bottom:16px}
 .chapter-preview h3{color:var(--azul);font-size:1.1rem;font-weight:800;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--azul-claro)}
 .chapter-text{font-size:.92rem;line-height:1.7;margin-bottom:12px;white-space:pre-wrap}
@@ -178,7 +188,7 @@ button,input,select,textarea{font-family:inherit}
 <main class="container">
   <div class="view active" id="viewList">
     <div class="page-header">
-      <div><h1>📚 <span>Readers</span></h1><p>Create interactive books. Projects are stored in this browser (IndexedDB).</p></div>
+      <div><h1>📚 <span>Readers</span></h1><p>Create interactive books. Projects are stored in Supabase.</p></div>
       <button class="btn btn-talento" id="btnNewReader" type="button">＋ New Reader</button>
     </div>
     <div class="readers-grid" id="readersGrid"></div>
@@ -298,8 +308,14 @@ button,input,select,textarea{font-family:inherit}
 <div class="toast" id="toast"></div>
 
 <script>
+// ====== SUPABASE ======
+const SUPABASE_URL = 'https://zbvhcotnhrtcqwsnaafq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpidmhjb3RuaHJ0Y3F3c25hYWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMTYwMjQsImV4cCI6MjEwODc5MjAyNH0.sz9vH0WJz8p2ARDFJygSf6AyN_moCzVFkHEb_1rsad4';
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ======================
+
 const DICT = {
-  // Chapter 1 – The Ghost on the Walls
   castle:  { m: 'a large strong building where a king or queen lives', ipa: '/ˈkɑːsl/' },
   ghost:   { m: 'the spirit of a dead person that some people believe can appear', ipa: '/ɡəʊst/' },
   guard:   { m: 'a person who protects a place or another person', ipa: '/ɡɑːd/' },
@@ -307,8 +323,6 @@ const DICT = {
   murder:  { m: 'the crime of killing a person on purpose', ipa: '/ˈmɜːdə/' },
   poison:  { m: 'a dangerous substance that can kill if you eat or drink it', ipa: '/ˈpɔɪzn/' },
   revenge: { m: 'the act of hurting someone because they hurt you first', ipa: '/rɪˈvendʒ/' },
-
-  // Chapter 2 – A Terrible Secret
   mad:     { m: 'mentally ill; behaving in a strange or crazy way', ipa: '/mæd/' },
   madness: { m: 'a state of mental illness; crazy behaviour', ipa: '/ˈmædnəs/' },
   secret:  { m: 'something that you do not tell other people', ipa: '/ˈsiːkrət/' },
@@ -317,30 +331,22 @@ const DICT = {
   spy:     { m: 'to watch someone secretly; a person who does this', ipa: '/spaɪ/' },
   proof:   { m: 'information or facts that show something is true', ipa: '/pruːf/' },
   play:    { m: 'a story that actors perform in a theatre', ipa: '/pleɪ/' },
-
-  // Chapter 3 – The Play Inside the Play
   guilty:     { m: 'having done something wrong or illegal', ipa: '/ˈɡɪlti/' },
   conscience: { m: 'the feeling inside you that tells you if something is right or wrong', ipa: '/ˈkɒnʃəns/' },
   pray:       { m: 'to speak to God, often to ask for help', ipa: '/preɪ/' },
   sword:      { m: 'a long metal weapon with a sharp blade', ipa: '/sɔːd/' },
   curtain:    { m: 'a piece of cloth that covers a window or hides part of a stage', ipa: '/ˈkɜːtn/' },
   truth:      { m: 'the real facts about a situation', ipa: '/truːθ/' },
-
-  // Chapter 4 – Madness and Death
   drown:   { m: 'to die under water because you cannot breathe', ipa: '/draʊn/' },
   funeral: { m: 'a ceremony for a person who has died', ipa: '/ˈfjuːnərəl/' },
   grave:   { m: 'a place in the ground where a dead person is buried', ipa: '/ɡreɪv/' },
   despair: { m: 'the feeling of having lost all hope', ipa: '/dɪˈspeə/' },
   duel:    { m: 'a formal fight between two people with weapons', ipa: '/ˈdjuːəl/' },
   order:   { m: 'an official instruction that must be obeyed', ipa: '/ˈɔːdə/' },
-
-  // Chapter 5 – The Final Duel
   wound:   { m: 'an injury to the body, especially one made by a knife or sword', ipa: '/wuːnd/' },
   queen:   { m: 'the wife of a king, or a woman who rules a country', ipa: '/kwiːn/' },
   tragedy: { m: 'a very sad event, especially one that involves death', ipa: '/ˈtrædʒədi/' },
   justice: { m: 'fair treatment of people according to the law', ipa: '/ˈdʒʌstɪs/' },
-
-  // Characters & extra useful B1 words from the Reader
   prince:    { m: 'the son of a king or queen', ipa: '/prɪns/' },
   king:      { m: 'a man who rules a country', ipa: '/kɪŋ/' },
   loyal:     { m: 'always supporting your friends or your country', ipa: '/ˈlɔɪəl/' },
@@ -363,13 +369,10 @@ const DICT = {
   laertes:   { m: "Ophelia's brother, who wants revenge", ipa: '/leɪˈɜːtiːz/' }
 };
 
-const DB_NAME = 'jv_readers_db';
-const STORE = 'projects';
-let db = null;
 let readers = [];
 let currentId = null;
 let activeChapterIdx = 0;
-let viewMode = 'edit'; // edit | student
+let viewMode = 'edit';
 let pendingImport = null;
 
 function uid(){ return 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -384,42 +387,50 @@ function defaultChapter(n){
 function defaultChar(){ return { id:uid(), name:'', description:'', photo:null }; }
 function defaultKeyword(){ return { word:'', meaning:'', ipa:'' }; }
 
-function openDB(){
-  return new Promise((res,rej)=>{
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = e => { e.target.result.createObjectStore(STORE, { keyPath:'id' }); };
-    req.onsuccess = e => { db = e.target.result; res(db); };
-    req.onerror = () => rej(req.error);
-  });
-}
+/* ===== SUPABASE CRUD ===== */
 async function loadAll(){
-  await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE,'readonly');
-    const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => { readers = req.result || []; res(readers); };
-    req.onerror = () => rej(req.error);
+  const { data, error } = await supabaseClient
+    .from('readers')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('loadAll error:', error); throw error; }
+  readers = (data || []).map(row => {
+    const r = (row.content && typeof row.content === 'object') ? row.content : {};
+    if (!r.id) r.id = row.client_id || String(row.id);
+    if (!Array.isArray(r.chapters)) r.chapters = [];
+    if (!Array.isArray(r.characters)) r.characters = [];
+    if (!r.keywords) r.keywords = [];
+    if (!r.level) r.level = 'B1';
+    if (!r.status) r.status = 'draft';
+    return r;
   });
+  return readers;
 }
 async function saveReader(r){
-  await openDB();
   r.updatedAt = new Date().toISOString();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE,'readwrite');
-    tx.objectStore(STORE).put(r);
-    tx.oncomplete = () => res();
-    tx.onerror = () => rej(tx.error);
-  });
+  const row = {
+    client_id: r.id,
+    title: r.title || '',
+    level: r.level || 'B1',
+    content: r,
+    updated_at: r.updatedAt
+  };
+  const { data, error } = await supabaseClient
+    .from('readers')
+    .upsert(row, { onConflict: 'client_id' })
+    .select()
+    .single();
+  if (error) { console.error('saveReader error:', error); throw error; }
+  return data;
 }
 async function deleteReaderDB(id){
-  await openDB();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(STORE,'readwrite');
-    tx.objectStore(STORE).delete(id);
-    tx.oncomplete = () => res();
-    tx.onerror = () => rej(tx.error);
-  });
+  const { error } = await supabaseClient
+    .from('readers')
+    .delete()
+    .eq('client_id', id);
+  if (error) { console.error('deleteReaderDB error:', error); throw error; }
 }
+/* ========================= */
 
 function toast(msg, type){
   const t = document.getElementById('toast');
@@ -471,16 +482,10 @@ async function fetchDictAPI(word){
     if(entry.meanings&&entry.meanings[0]&&entry.meanings[0].definitions){
       meaning = entry.meanings[0].definitions[0].definition || '';
     }
-    let audio = '';
-    if(entry.phonetics){
-      const a = entry.phonetics.find(x=>x.audio);
-      if(a) audio = a.audio.startsWith('http')?a.audio:('https:'+a.audio);
-    }
-    return { meaning, ipa, audio };
+    return { meaning, ipa };
   }catch(e){ return null; }
 }
 
-/* Tabs */
 document.getElementById('panelTabs').addEventListener('click', e=>{
   const btn = e.target.closest('[data-tab]');
   if(!btn) return;
@@ -490,7 +495,6 @@ document.getElementById('panelTabs').addEventListener('click', e=>{
   document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
 });
 
-/* Mode toggle */
 document.querySelectorAll('[data-mode]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
@@ -536,7 +540,7 @@ function updateChecklist(){
 async function openEditor(id){
   currentId = id;
   const r = getCurrent(); if(!r) return;
-    document.getElementById('fieldTitle').value = r.title||'';
+  document.getElementById('fieldTitle').value = r.title||'';
   document.getElementById('fieldLevel').value = r.level||'B1';
   document.getElementById('btnDelete').style.display = 'inline-flex';
   if(r.coverImage){ document.getElementById('coverPreview').style.display='block'; document.getElementById('coverImg').src=r.coverImage; }
@@ -550,7 +554,7 @@ async function openEditor(id){
 async function createNewReader(){
   const r = defaultReader();
   readers.unshift(r);
-  await saveReader(r);
+  try { await saveReader(r); } catch(e){ toast('Save failed: check Supabase','error'); }
   openEditor(r.id);
   toast('New Reader created');
 }
@@ -559,14 +563,15 @@ async function duplicateReader(id){
   const c = JSON.parse(JSON.stringify(o));
   c.id=uid(); c.title=(c.title||'Untitled')+' (copia)'; c.status='draft';
   c.createdAt=c.updatedAt=new Date().toISOString();
-  readers.unshift(c); await saveReader(c); renderList(); toast('Duplicated');
+  readers.unshift(c);
+  try { await saveReader(c); } catch(e){ toast('Duplicate failed','error'); }
+  renderList(); toast('Duplicated');
 }
 
 function collectFromForm(){
   const r = getCurrent(); if(!r) return;
   r.title = document.getElementById('fieldTitle').value.trim();
   r.level = document.getElementById('fieldLevel').value;
-  // characters from DOM
   r.characters = [];
   document.querySelectorAll('#charList .char-card').forEach(card=>{
     r.characters.push({ id:card.dataset.cid||uid(), name:card.querySelector('[data-char-name]')?.value.trim()||'', description:card.querySelector('[data-char-desc]')?.value.trim()||'', photo:card.dataset.photo||null });
@@ -575,7 +580,6 @@ function collectFromForm(){
     const ch = r.chapters[activeChapterIdx];
     ch.title = document.getElementById('chTitle').value.trim();
     ch.text = document.getElementById('chText').value;
-    // chapter keywords (preserve audio from state when re-collecting text fields)
     const prevKw = ch.keywords || [];
     ch.keywords = [];
     document.querySelectorAll('#kwList .kw-row').forEach((row, i) => {
@@ -606,21 +610,27 @@ async function saveProject(){
   collectFromForm();
   const r = getCurrent(); if(!r) return;
   if(r.status!=='published') r.status='draft';
-  await saveReader(r);
-  const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
-  setStatus('Saved', true); toast('Project saved');
-  renderCharacters(); renderKeywords(); renderChaptersList(); updatePreview();
+  try {
+    await saveReader(r);
+    const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
+    setStatus('Saved', true); toast('Project saved');
+    renderCharacters(); renderKeywords(); renderChaptersList(); updatePreview();
+  } catch(e){
+    toast('Save failed: check Supabase','error');
+  }
 }
 async function publishReader(){
   collectFromForm();
   const r = getCurrent(); if(!r) return;
   if(!r.title){ toast('Title required','error'); return; }
   if(!r.chapters.length||!r.chapters.some(c=>c.text&&c.text.trim())){ toast('Chapter content required','error'); return; }
-  r.status='published'; await saveReader(r); setStatus('Published',true); toast('Published!'); updatePreview();
+  r.status='published';
+  try { await saveReader(r); setStatus('Published',true); toast('Published!'); updatePreview(); }
+  catch(e){ toast('Publish failed','error'); }
 }
 async function deleteReader(){
   if(!confirm('Delete this Reader?')) return;
-  await deleteReaderDB(currentId);
+  try { await deleteReaderDB(currentId); } catch(e){ toast('Delete failed','error'); return; }
   readers = readers.filter(x=>x.id!==currentId);
   currentId=null; showView('List'); renderList(); toast('Deleted');
 }
@@ -646,8 +656,7 @@ function renderCharacters(){
 }
 function addCharacter(){ collectFromForm(); getCurrent().characters.push(defaultChar()); renderCharacters(); updatePreview(); }
 
-
-/* Keywords — per chapter; voice = recorded/uploaded audio (no Web Speech) */
+/* Keywords */
 function renderKeywords(){
   const r = getCurrent();
   const list = document.getElementById('kwList');
@@ -680,11 +689,7 @@ function renderKeywords(){
   }).join('');
 
   list.querySelectorAll('[data-del-kw]').forEach(btn => {
-    btn.onclick = () => {
-      collectFromForm();
-      getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1);
-      renderKeywords(); updatePreview();
-    };
+    btn.onclick = () => { collectFromForm(); getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1); renderKeywords(); updatePreview(); };
   });
   list.querySelectorAll('[data-gen-mean]').forEach(btn => {
     btn.onclick = async () => {
@@ -742,16 +747,12 @@ function renderKeywords(){
       renderKeywords(); updatePreview();
     };
   });
-  // record per keyword
   list.querySelectorAll('[data-kw-rec]').forEach(btn => {
     btn.onclick = async () => {
       const idx = +btn.dataset.kwRec;
       if (!navigator.mediaDevices?.getUserMedia) { toast('Microphone not available','error'); return; }
       try {
-        if (btn.classList.contains('recording') && window._kwRecorder) {
-          window._kwRecorder.stop();
-          return;
-        }
+        if (btn.classList.contains('recording') && window._kwRecorder) { window._kwRecorder.stop(); return; }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const chunks = [];
         const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
@@ -766,10 +767,7 @@ function renderKeywords(){
           const b64 = await fileToBase64(blob);
           collectFromForm();
           const ch = getCurrent().chapters[activeChapterIdx];
-          if (ch.keywords[idx]) {
-            ch.keywords[idx].audio = b64;
-            ch.keywords[idx].audioName = 'word-'+idx+'.webm';
-          }
+          if (ch.keywords[idx]) { ch.keywords[idx].audio = b64; ch.keywords[idx].audioName = 'word-'+idx+'.webm'; }
           renderKeywords(); updatePreview(); toast('Word audio saved');
         };
         rec.start();
@@ -819,7 +817,6 @@ function loadChapterEditor(idx){
   const audioBox=document.getElementById('chAudioBox'), wrap=document.getElementById('chAudioPlayerWrap'), player=document.getElementById('chAudioPlayer'), name=document.getElementById('chAudioName');
   if(ch.audio){ player.src=ch.audio; name.textContent=ch.audioName||'Audio'; wrap.style.display='block'; audioBox.classList.add('has-audio'); document.getElementById('chAudioZone').style.display='none'; }
   else { player.removeAttribute('src'); player.load(); wrap.style.display='none'; audioBox.classList.remove('has-audio'); document.getElementById('chAudioZone').style.display='block'; }
-  // normalize questions
   if(!Array.isArray(ch.questions)) ch.questions=[];
   ch.questions = ch.questions.map(item=>{
     if(typeof item==='string') return {q:item,options:['','',''],correct:0};
@@ -882,7 +879,10 @@ function updatePreview(){
       '</div>';
     const chKws=(ch.keywords||[]).filter(k=>k.word);
     if(chKws.length){
-      html+='<div class="kw-preview-block"><h4 style="font-size:.8rem;color:var(--azul);margin-bottom:8px">🔑 Key words for this chapter</h4>';
+      const isOpen = viewMode !== 'student';
+      html+='<details class="kw-preview-block"'+(isOpen?' open':'')+'>'
+          +'<summary>🔑 Key words for this chapter <span style="font-weight:600;color:var(--gris);font-size:.75rem">('+chKws.length+')</span></summary>'
+          +'<div class="kw-inner">';
       chKws.forEach(k=>{
         html+='<div class="kw-preview-item"><strong>'+escapeHtml(k.word)+'</strong>';
         if(k.ipa) html+=' <span class="ipa">'+escapeHtml(k.ipa)+'</span>';
@@ -890,7 +890,7 @@ function updatePreview(){
         if(k.audio) html+=' <audio controls src="'+k.audio+'" style="height:28px;vertical-align:middle;max-width:120px;margin-left:6px"></audio>';
         html+='</div>';
       });
-      html+='</div>';
+      html+='</div></details>';
     }
     html+='<div class="chapter-text">'+(escapeHtml(ch.text)||'<em style="color:#9ca3af">(No text yet)</em>')+'</div>';
     const qItems=(ch.questions||[]).filter(item=>typeof item==='string'?item.trim():(item&&item.q&&item.q.trim()));
@@ -979,12 +979,21 @@ function bindLearnerRec(area){
     const idx=+btn.dataset.learnerSave;
     if(!pendingBlob||pendingIdx!==idx){ toast('No recording pending','error'); return; }
     const b64=await fileToBase64(pendingBlob);
-    const r=getCurrent(); if(r&&r.chapters[idx]){ r.chapters[idx].learnerAudio=b64; r.chapters[idx].learnerAudioName='voz-lector.webm'; await saveReader(r); updatePreview(); toast('Voice saved'); }
+    const r=getCurrent();
+    if(r&&r.chapters[idx]){
+      r.chapters[idx].learnerAudio=b64; r.chapters[idx].learnerAudioName='voz-lector.webm';
+      try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
+      updatePreview(); toast('Voice saved');
+    }
     pendingBlob=null; pendingIdx=null;
   });
   area.querySelectorAll('[data-learner-del]').forEach(btn=>btn.onclick=async()=>{
     const idx=+btn.dataset.learnerDel; const r=getCurrent();
-    if(r&&r.chapters[idx]){ r.chapters[idx].learnerAudio=null; await saveReader(r); updatePreview(); }
+    if(r&&r.chapters[idx]){
+      r.chapters[idx].learnerAudio=null;
+      try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
+      updatePreview();
+    }
   });
 }
 
@@ -1161,18 +1170,16 @@ document.getElementById('btnImportConfirm').onclick=async()=>{
     if(ch.questions?.length) base.questions=ch.questions;
     return base;
   });
-  // Assign detected key words to chapters (split evenly or all to each if few)
   if(pendingImport.keywords?.length){
     const kws = pendingImport.keywords;
-    r.chapters.forEach((ch, i) => {
-      // Prefer keywords that appear in chapter text; else share list
+    r.chapters.forEach((ch) => {
       const inText = kws.filter(k => ch.text && new RegExp('\\b'+k.word+'\\b','i').test(ch.text));
       ch.keywords = (inText.length ? inText : kws).map(k => ({ word:k.word, meaning:k.meaning, ipa:k.ipa, audio:null, audioName:'' }));
     });
   }
   renderKeywords();
   activeChapterIdx=0; renderChaptersList(); loadChapterEditor(0); updateChecklist(); updatePreview();
-  await saveReader(r);
+  try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
   document.querySelector('[data-tab="capitulos"]').click();
   document.getElementById('importStatus').textContent='Applied: '+r.chapters.length+' chapter(s).';
   toast('Import applied to panel');
@@ -1197,16 +1204,23 @@ setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover',
 setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
 
 loadAll().then(()=>{
-  // migrate from localStorage if any
   try{
     const legacy=localStorage.getItem('jv_readers_data_v3');
     if(legacy && !readers.length){
       const arr=JSON.parse(legacy);
-      if(Array.isArray(arr)&&arr.length){ readers=arr; arr.forEach(r=>saveReader(r)); toast('Projects migrated from previous storage'); }
+      if(Array.isArray(arr)&&arr.length){
+        readers=arr;
+        arr.forEach(r=>saveReader(r));
+        toast('Projects migrated from previous storage');
+      }
     }
   }catch(e){}
   renderList();
-}).catch(e=>{ console.error(e); toast('Could not open local database','error'); renderList(); });
+}).catch(e=>{
+  console.error(e);
+  toast('Could not connect to Supabase','error');
+  renderList();
+});
 </script>
 
 </body></html>
