@@ -609,61 +609,102 @@ function openStudentReader(book) {
     </div>`;
   document.body.appendChild(overlay);
 }
-  function startStudentReading(bookId) {
-  // Cerramos la portada
+function startStudentReading(bookId) {
   const modal = document.getElementById('studentModal');
   if (modal) modal.remove();
   
   const book = readers.find(r => r.id === bookId);
   if (!book) return;
 
-  // Creamos un contenedor a pantalla completa
   const readerOverlay = document.createElement('div');
   readerOverlay.id = 'fullReaderOverlay';
-  readerOverlay.style.cssText = 'position:fixed; inset:0; background:#1e293b; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
+  // Contenedor principal a pantalla completa pero con Flexbox para centrar
+  readerOverlay.style.cssText = 'position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden;';
   
+  // Fondo desenfocado de la portada (o un gradiente oscuro si no hay portada)
+  const bgUrl = book.coverImage ? `url('${book.coverImage}')` : 'linear-gradient(135deg, #0f172a, #1e293b)';
+
   readerOverlay.innerHTML = `
-    <div style="position:absolute; top:20px; left:20px; right:20px; display:flex; justify-content:space-between; align-items:center; color:#fff; z-index:10;">
-      <span style="font-size:1.2rem; font-weight:800;">${book.title}</span>
-      <button onclick="document.getElementById('fullReaderOverlay').remove()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:8px 16px; border-radius:50px; cursor:pointer; font-weight:bold;">✕ Salir</button>
+    <!-- Fondo Inmersivo -->
+    <div style="position:absolute; inset:0; background: ${bgUrl} center/cover no-repeat; filter: blur(30px) brightness(0.3); z-index:-1; transform: scale(1.1);"></div>
+    
+    <!-- Barra Superior (Título y botón Salir) -->
+    <div style="position:absolute; top:0; left:0; right:0; padding:20px 30px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+      <span style="color:#fff; font-size:1.2rem; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.8);">${book.title}</span>
+      <button onclick="document.getElementById('fullReaderOverlay').remove()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:8px 18px; border-radius:50px; cursor:pointer; font-weight:bold; backdrop-filter:blur(10px); transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕ Cerrar libro</button>
     </div>
-    
-    <div id="studentFlipbookContainer" style="width:100%; max-width:1000px; height:80vh; background:#fff; border-radius:14px; box-shadow:0 20px 50px rgba(0,0,0,0.5);"></div>
-    
-    <div style="position:absolute; bottom:20px; left:0; right:0; display:flex; justify-content:center; gap:15px; z-index:10;">
-      <button class="btn btn-ghost btn-mini" id="studFlipPrev" style="color:#fff; border-color:#475569;">← Anterior</button>
-      <span id="studFlipIndicator" style="color:#fff; font-weight:bold; display:flex; align-items:center; padding:0 15px;">1 / 1</span>
-      <button class="btn btn-ghost btn-mini" id="studFlipNext" style="color:#fff; border-color:#475569;">Siguiente →</button>
+
+    <!-- Área del Libro -->
+    <div style="display:flex; flex-direction:column; align-items:center; width:100%; padding:0 20px; margin-top:20px;">
+      
+      <!-- El contenedor del libro 3D -->
+      <div id="studentFlipbookContainer" style="width:100%; max-width:900px; height:65vh; max-height:650px; border-radius:10px; box-shadow:0 40px 80px rgba(0,0,0,0.8);"></div>
+      
+      <!-- Controles flotantes -->
+      <div style="margin-top:25px; display:flex; align-items:center; gap:15px; z-index:10;">
+        <button class="btn btn-ghost btn-mini" id="studFlipPrev" style="color:#fff; border-color:rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); backdrop-filter:blur(10px);">← Anterior</button>
+        <span id="studFlipIndicator" style="color:#fff; font-weight:bold; background:rgba(0,0,0,0.4); padding:8px 20px; border-radius:20px; backdrop-filter:blur(10px); font-size:0.9rem;">1 / 1</span>
+        <button class="btn btn-ghost btn-mini" id="studFlipNext" style="color:#fff; border-color:rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); backdrop-filter:blur(10px);">Siguiente →</button>
+      </div>
     </div>
   `;
   
   document.body.appendChild(readerOverlay);
 
-  // Construimos las páginas usando la misma función que usamos en el editor
+  // Construir las páginas (Optimizadas para el alumno)
   const container = document.getElementById('studentFlipbookContainer');
+  
+  const buildStudentPage = (ch, i) => {
+    let html = '<div class="page-content" style="height:100%; padding:0;">';
+    if(!ch){
+      // Página de Portada del alumno
+      html += '<div style="position:relative; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center;">';
+      if(book.coverImage) {
+          html += '<img src="'+book.coverImage+'" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:10px; opacity:0.85;">';
+      }
+      html += '<div style="position:relative; z-index:2; background:rgba(15,23,42,0.7); padding:30px; border-radius:14px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2);">';
+      html += '<h2 style="font-size:2rem; margin-bottom:10px; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.5);">'+escapeHtml(book.title||'Untitled')+'</h2>';
+      html += '<span style="background:var(--acento); color:#1f2937; font-weight:800; font-size:0.85rem; padding:5px 15px; border-radius:50px;">Nivel '+book.level+'</span>';
+      html += '</div></div>';
+    } else {
+      // Página de Capítulo
+      html += '<div style="padding:35px 40px; height:100%; overflow-y:auto;">';
+      html += '<h3 style="color:var(--azul); font-size:1.6rem; font-weight:800; margin-bottom:15px; border-bottom:2px solid var(--azul-claro); padding-bottom:8px;">'+escapeHtml(ch.title||('Capítulo '+(i+1)))+'</h3>';
+      if(ch.image) {
+          html += '<img src="'+ch.image+'" style="width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-bottom:20px;">';
+      }
+      // Texto con tipografía grande para niños
+      html += '<div style="white-space:pre-wrap; font-size:1.15rem; line-height:1.8; color:#1f2937;">'+escapeHtml(ch.text||'(Aún no hay texto)')+'</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  };
+
   const pages = [];
+  pages.push(buildStudentPage(null, 0));
+  book.chapters.forEach((ch, i) => pages.push(buildStudentPage(ch, i)));
   
-  // Página 1: Portada
-  pages.push(buildPageContent(book, null, 0));
-  
-  // Páginas de los capítulos (pero con letra más grande para el alumno)
-  book.chapters.forEach((ch, i) => {
-    // Hacemos una copia del capítulo con letra más grande
-    let pageHtml = buildPageContent(book, ch, i);
-    pageHtml = pageHtml.replace('font-size:.88rem', 'font-size:1.2rem; line-height:1.8;');
-    pages.push(pageHtml);
-  });
-  
-  container.innerHTML = pages.map(html => '<div class="page">'+html+'</div>').join('');
+  container.innerHTML = pages.map(html => '<div class="page" style="background:#fff;">'+html+'</div>').join('');
   
   const total = pages.length;
   document.getElementById('studFlipIndicator').textContent = '1 / ' + total;
   
-  // Inicializamos el libro 3D
+  // Inicializar la librería PageFlip
   try {
     const pageFlip = new St.PageFlip(container, {
-      width: 450, height: 600, size: 'stretch', minWidth: 300, maxWidth: 900, minHeight: 400, maxHeight: 800,
-      drawShadow: true, flippingTime: 800, usePortrait: true, showCover: true, autoSize: true
+      width: 450, 
+      height: 600, 
+      size: 'stretch', 
+      minWidth: 300, 
+      maxWidth: 900, 
+      minHeight: 400, 
+      maxHeight: 650,
+      drawShadow: true, 
+      flippingTime: 800, 
+      usePortrait: true, 
+      showCover: true, 
+      autoSize: true
     });
     pageFlip.loadFromHTML(container.querySelectorAll('.page'));
     
@@ -678,7 +719,6 @@ function openStudentReader(book) {
     alert('No se pudo cargar el libro.');
   }
 }
-
 // === LÓGICA DE ACCESO ADMIN ===
 function openAdminLoginModal() {
   document.getElementById('adminLoginModal').classList.add('show');
