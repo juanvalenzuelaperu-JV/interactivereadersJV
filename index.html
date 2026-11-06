@@ -195,6 +195,20 @@ button,input,select,textarea{font-family:inherit}
 .page-content .page-char-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:50px;background:#eef2ff;color:var(--talento);font-size:.75rem;font-weight:700}
 .page-content .page-char-chip .avatar{width:20px;height:20px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#c7d2fe}
 .page-content .page-char-chip .avatar img{width:100%;height:100%;object-fit:cover}
+
+/* === Modo alumno: tipografía de libro infantil === */
+body.mode-student .chapter-text{
+  font-size:1.25rem;
+  line-height:1.9;
+  letter-spacing:.02em;
+  color:#111827;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+body.mode-student .chapter-preview h3 { font-size:1.5rem; }
+body.mode-student .questions-block { font-size:1rem; }
+body.mode-student .student-opt { padding:14px 16px; font-size:1.05rem; border-width:2px; }
+body.mode-student .chapter-img { max-height:320px; }
+body.mode-student .kw-preview-item { font-size:1rem; }
 </style>
 </head>
 <body>
@@ -411,7 +425,7 @@ let readers = [];
 let currentId = null;
 let activeChapterIdx = 0;
 let viewMode = 'edit';
-let previewMode = 'scroll'; // 'scroll' | 'flipbook'
+let previewMode = 'scroll'; 
 let flipbookInstance = null;
 let pendingImport = null;
 
@@ -426,6 +440,43 @@ function defaultChapter(n){
 }
 function defaultChar(){ return { id:uid(), name:'', description:'', photo:null }; }
 function defaultKeyword(){ return { word:'', meaning:'', ipa:'' }; }
+
+// ===== HELPERS AUDIO Y AUTOSAVE =====
+function pickAudioMime() {
+  if (typeof MediaRecorder === 'undefined') return 'audio/webm';
+  if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4'; 
+  if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+  return 'audio/webm';
+}
+function audioExt(mime){ return mime.includes('mp4') ? 'm4a' : 'webm'; }
+
+let _autosaveTimer = null;
+let _autosaveBusy  = false;
+
+function markDirty(){
+  clearTimeout(_autosaveTimer);
+  setStatus('Cambios sin guardar...', false);
+  _autosaveTimer = setTimeout(async () => {
+    if (_autosaveBusy || !currentId) return;
+    _autosaveBusy = true;
+    setStatus('Guardando...', false);
+    collectFromForm();
+    const r = getCurrent();
+    if(r) {
+      try { 
+        await saveReader(r); 
+        const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
+        setStatus('Saved', true);
+        // No re-renderizamos para no perder el foco del cursor
+      } catch(e){ 
+        console.error(e); 
+        setStatus('Error al guardar', false);
+      }
+    }
+    _autosaveBusy = false;
+  }, 1500);
+}
+// ====================================
 
 /* ===== SUPABASE CRUD ===== */
 async function loadAll(){
@@ -442,7 +493,6 @@ async function loadAll(){
     if (!r.keywords) r.keywords = [];
     if (!r.level) r.level = 'B1';
     if (!r.status) r.status = 'draft';
-    // compatibilidad: asegurar characters:[] en cada capítulo
     r.chapters.forEach(ch => { if(!Array.isArray(ch.characters)) ch.characters = []; });
     return r;
   });
@@ -542,6 +592,10 @@ document.querySelectorAll('[data-mode]').forEach(btn=>{
     document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     viewMode = btn.dataset.mode;
+    
+    // ACTIVA EL MODO ESTUDIANTE (Letras grandes)
+    document.body.classList.toggle('mode-student', viewMode === 'student');
+
     document.getElementById('previewHeader').textContent = viewMode==='student' ? '👤 Student mode' : '👁 Preview (edit mode)';
     document.getElementById('editLayout').style.gridTemplateColumns = viewMode==='student' ? '1fr' : '';
     document.querySelector('.panel:not(.preview-panel)').style.display = viewMode==='student' ? 'none' : '';
@@ -622,7 +676,6 @@ function collectFromForm(){
     const ch = r.chapters[activeChapterIdx];
     ch.title = document.getElementById('chTitle').value.trim();
     ch.text = document.getElementById('chText').value;
-    // NUEVO: recoger personajes asignados al capítulo
     if(!Array.isArray(ch.characters)) ch.characters = [];
     ch.characters = [];
     document.querySelectorAll('#chapterChars .chapter-char-chip.assigned').forEach(chip=>{
@@ -698,14 +751,13 @@ function renderCharacters(){
     zone.onclick=e=>{ if(e.target.tagName!=='INPUT') input.click(); };
     input.onchange=async()=>{ const f=input.files[0]; if(!f) return; const b64=await fileToBase64(f); const idx=+zone.dataset.charPhoto; r.characters[idx].photo=b64; zone.closest('.char-card').dataset.photo=b64; zone.innerHTML='<img src="'+b64+'" alt=""><input type="file" accept="image/*">'; const ni=zone.querySelector('input'); zone.onclick=e=>{if(e.target.tagName!=='INPUT')ni.click()}; ni.onchange=input.onchange; updatePreview(); renderChapterChars(); };
   });
-  list.querySelectorAll('[data-del-char]').forEach(btn=>btn.onclick=()=>{ r.characters.splice(+btn.dataset.delChar,1); renderCharacters(); updatePreview(); });
+  list.querySelectorAll('[data-del-char]').forEach(btn=>btn.onclick=()=>{ r.characters.splice(+btn.dataset.delChar,1); renderCharacters(); updatePreview(); markDirty(); });
   list.querySelectorAll('[data-speak-char]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); speak(list.querySelectorAll('[data-char-name]')[+btn.dataset.speakChar]?.value, btn); });
-  list.querySelectorAll('[data-char-name],[data-char-desc]').forEach(el=>el.oninput=()=>{ collectFromForm(); renderChapterChars(); updatePreview(); });
+  list.querySelectorAll('[data-char-name],[data-char-desc]').forEach(el=>el.oninput=()=>{ collectFromForm(); markDirty(); renderChapterChars(); updatePreview(); });
   renderChapterChars();
 }
-function addCharacter(){ collectFromForm(); getCurrent().characters.push(defaultChar()); renderCharacters(); updatePreview(); }
+function addCharacter(){ collectFromForm(); getCurrent().characters.push(defaultChar()); renderCharacters(); updatePreview(); markDirty(); }
 
-/* NUEVO: render de chips de personajes en el capítulo activo */
 function renderChapterChars(){
   const r = getCurrent();
   const wrap = document.getElementById('chapterChars');
@@ -723,6 +775,7 @@ function renderChapterChars(){
     chip.onclick = () => {
       chip.classList.toggle('assigned');
       collectFromForm();
+      markDirty();
       updatePreview();
     };
   });
@@ -761,7 +814,7 @@ function renderKeywords(){
   }).join('');
 
   list.querySelectorAll('[data-del-kw]').forEach(btn => {
-    btn.onclick = () => { collectFromForm(); getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1); renderKeywords(); updatePreview(); };
+    btn.onclick = () => { collectFromForm(); getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1); renderKeywords(); updatePreview(); markDirty(); };
   });
   list.querySelectorAll('[data-gen-mean]').forEach(btn => {
     btn.onclick = async () => {
@@ -777,7 +830,7 @@ function renderKeywords(){
         if (api && api.meaning) { meanInp.value = api.meaning; toast('From API'); }
         else { meanInp.focus(); toast('Not found','error'); }
       }
-      collectFromForm(); updatePreview();
+      collectFromForm(); markDirty(); updatePreview();
     };
   });
   list.querySelectorAll('[data-gen-ipa]').forEach(btn => {
@@ -794,7 +847,7 @@ function renderKeywords(){
         if (api && api.ipa) { ipaInp.value = api.ipa; toast('From API'); }
         else { ipaInp.value = '/'+word+'/'; toast('Edit IPA manually','error'); }
       }
-      collectFromForm(); updatePreview();
+      collectFromForm(); markDirty(); updatePreview();
     };
   });
   list.querySelectorAll('[data-kw-file]').forEach(inp => {
@@ -807,7 +860,7 @@ function renderKeywords(){
       if (!ch.keywords[idx]) return;
       ch.keywords[idx].audio = b64;
       ch.keywords[idx].audioName = f.name;
-      renderKeywords(); updatePreview(); toast('Word audio saved');
+      renderKeywords(); updatePreview(); markDirty(); toast('Word audio saved');
     };
   });
   list.querySelectorAll('[data-kw-del-audio]').forEach(btn => {
@@ -816,7 +869,7 @@ function renderKeywords(){
       const ch = getCurrent().chapters[activeChapterIdx];
       const idx = +btn.dataset.kwDelAudio;
       if (ch.keywords[idx]) { ch.keywords[idx].audio = null; ch.keywords[idx].audioName = ''; }
-      renderKeywords(); updatePreview();
+      renderKeywords(); updatePreview(); markDirty();
     };
   });
   list.querySelectorAll('[data-kw-rec]').forEach(btn => {
@@ -827,7 +880,7 @@ function renderKeywords(){
         if (btn.classList.contains('recording') && window._kwRecorder) { window._kwRecorder.stop(); return; }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const chunks = [];
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+        const mime = pickAudioMime();
         const rec = new MediaRecorder(stream, { mimeType: mime });
         window._kwRecorder = rec;
         rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
@@ -839,8 +892,8 @@ function renderKeywords(){
           const b64 = await fileToBase64(blob);
           collectFromForm();
           const ch = getCurrent().chapters[activeChapterIdx];
-          if (ch.keywords[idx]) { ch.keywords[idx].audio = b64; ch.keywords[idx].audioName = 'word-'+idx+'.webm'; }
-          renderKeywords(); updatePreview(); toast('Word audio saved');
+          if (ch.keywords[idx]) { ch.keywords[idx].audio = b64; ch.keywords[idx].audioName = 'word-'+idx+'.'+audioExt(mime); }
+          renderKeywords(); updatePreview(); markDirty(); toast('Word audio saved');
         };
         rec.start();
         btn.classList.add('recording');
@@ -849,7 +902,7 @@ function renderKeywords(){
     };
   });
   list.querySelectorAll('input[type=text]').forEach(inp => {
-    inp.oninput = () => { collectFromForm(); updatePreview(); };
+    inp.oninput = () => { collectFromForm(); markDirty(); updatePreview(); };
   });
 }
 function addKeyword(){
@@ -858,7 +911,7 @@ function addKeyword(){
   if (!r || !r.chapters[activeChapterIdx]) { toast('Select a chapter first','error'); return; }
   if (!r.chapters[activeChapterIdx].keywords) r.chapters[activeChapterIdx].keywords = [];
   r.chapters[activeChapterIdx].keywords.push({ word:'', meaning:'', ipa:'', audio:null, audioName:'' });
-  renderKeywords(); updatePreview();
+  renderKeywords(); updatePreview(); markDirty();
 }
 
 /* Chapters */
@@ -875,7 +928,7 @@ function renderChaptersList(){
     r.chapters.splice(+btn.dataset.delCh,1);
     if(activeChapterIdx>=r.chapters.length) activeChapterIdx=Math.max(0,r.chapters.length-1);
     if(r.chapters.length) loadChapterEditor(activeChapterIdx); else document.getElementById('chapterEditor').style.display='none';
-    renderChaptersList(); updatePreview();
+    renderChaptersList(); updatePreview(); markDirty();
   });
 }
 function loadChapterEditor(idx){
@@ -908,18 +961,18 @@ function renderQuestionsEditor(ch){
       [0,1,2].map(oi=>'<div class="mcq-opt"><input type="radio" name="mcq-c-'+i+'" data-mcq-correct value="'+oi+'" '+(correct===oi?'checked':'')+'><label>OK</label><input type="text" data-mcq-opt="'+oi+'" value="'+(opts[oi]||'').replace(/"/g,'&quot;')+'" placeholder="Option '+(oi+1)+'"></div>').join('');
     qList.appendChild(card);
   });
-  qList.querySelectorAll('[data-del-q]').forEach(btn=>btn.onclick=()=>{ collectFromForm(); getCurrent().chapters[activeChapterIdx].questions.splice(+btn.dataset.delQ,1); renderQuestionsEditor(getCurrent().chapters[activeChapterIdx]); updatePreview(); });
-  qList.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{collectFromForm();updatePreview()}; inp.onchange=()=>{collectFromForm();updatePreview()}; });
+  qList.querySelectorAll('[data-del-q]').forEach(btn=>btn.onclick=()=>{ collectFromForm(); getCurrent().chapters[activeChapterIdx].questions.splice(+btn.dataset.delQ,1); renderQuestionsEditor(getCurrent().chapters[activeChapterIdx]); updatePreview(); markDirty(); });
+  qList.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{collectFromForm();markDirty();updatePreview()}; inp.onchange=()=>{collectFromForm();markDirty();updatePreview()}; });
 }
-function addChapter(){ collectFromForm(); const r=getCurrent(); r.chapters.push(defaultChapter(r.chapters.length+1)); activeChapterIdx=r.chapters.length-1; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview(); }
+function addChapter(){ collectFromForm(); const r=getCurrent(); r.chapters.push(defaultChapter(r.chapters.length+1)); activeChapterIdx=r.chapters.length-1; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview(); markDirty(); }
 
 function setupImg(zoneId,inputId,previewId,imgId,removeId,onSet){
   const zone=document.getElementById(zoneId), input=document.getElementById(inputId), preview=document.getElementById(previewId), img=document.getElementById(imgId);
   zone.onclick=()=>input.click();
   zone.ondragover=e=>{e.preventDefault();zone.classList.add('dragover')}; zone.ondragleave=()=>zone.classList.remove('dragover');
-  zone.ondrop=async e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; }};
-  input.onchange=async()=>{ const f=input.files[0]; if(f){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; }};
-  document.getElementById(removeId).onclick=e=>{ e.stopPropagation(); onSet(null); img.src=''; preview.style.display='none'; input.value=''; };
+  zone.ondrop=async e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; markDirty(); }};
+  input.onchange=async()=>{ const f=input.files[0]; if(f){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; markDirty(); }};
+  document.getElementById(removeId).onclick=e=>{ e.stopPropagation(); onSet(null); img.src=''; preview.style.display='none'; input.value=''; markDirty(); };
 }
 
 /* Preview */
@@ -937,7 +990,6 @@ function updatePreview(){
   }
   scrollArea.style.display='block';
   flipWrap.style.display='none';
-  // destruir flipbook si existía
   if(flipbookInstance){ try{ flipbookInstance.destroy(); }catch(e){} flipbookInstance=null; }
 
   let html='';
@@ -954,7 +1006,6 @@ function updatePreview(){
     html+='</div>';
   }
   r.chapters.forEach((ch,i)=>{
-    // NUEVO: personajes filtrados por capítulo
     let chapChars = [];
     if(r.characters && r.characters.length){
       if(Array.isArray(ch.characters) && ch.characters.length){
@@ -1049,11 +1100,9 @@ function updatePreview(){
   }
 }
 
-/* ===== NUEVO: Flipbook render ===== */
 function buildPageContent(r, ch, i){
   let html = '<div class="page-content">';
   if(!ch){
-    // portada
     html += '<div class="page-cover">';
     if(r.coverImage) html += '<img src="'+r.coverImage+'" style="width:160px;height:210px;object-fit:cover;border-radius:10px;margin-bottom:16px">';
     html += '<h2>'+escapeHtml(r.title||'Untitled')+'</h2>';
@@ -1062,7 +1111,6 @@ function buildPageContent(r, ch, i){
   } else {
     html += '<h3>'+escapeHtml(ch.title||('Chapter '+(i+1)))+'</h3>';
     if(ch.image) html += '<img src="'+ch.image+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
-    // personajes del capítulo
     if(r.characters && r.characters.length){
       let chapChars = (Array.isArray(ch.characters) && ch.characters.length)
         ? r.characters.filter(c => ch.characters.includes(c.id) && (c.name || c.description))
@@ -1084,39 +1132,22 @@ function buildPageContent(r, ch, i){
 function renderFlipbook(r){
   const container = document.getElementById('flipbook');
   container.innerHTML = '';
-  // construir páginas: portada + una por capítulo
   const pages = [];
   pages.push(buildPageContent(r, null, 0));
   r.chapters.forEach((ch, i) => pages.push(buildPageContent(r, ch, i)));
-
-  // StPageFlip requiere páginas en el DOM
   container.innerHTML = pages.map(html => '<div class="page">'+html+'</div>').join('');
-
   const total = pages.length;
   document.getElementById('flipIndicator').textContent = '1 / '+total;
-
   try{
     const pageFlip = new St.PageFlip(container, {
-      width: 450,
-      height: 600,
-      size: 'stretch',
-      minWidth: 300,
-      maxWidth: 900,
-      minHeight: 400,
-      maxHeight: 800,
-      drawShadow: true,
-      flippingTime: 800,
-      usePortrait: true,
-      showCover: true,
-      autoSize: true
+      width: 450, height: 600, size: 'stretch', minWidth: 300, maxWidth: 900, minHeight: 400, maxHeight: 800,
+      drawShadow: true, flippingTime: 800, usePortrait: true, showCover: true, autoSize: true
     });
     pageFlip.loadFromHTML(container.querySelectorAll('.page'));
     flipbookInstance = pageFlip;
-
     pageFlip.on('flip', (e) => {
       document.getElementById('flipIndicator').textContent = (e.data + 1) + ' / ' + total;
     });
-
     document.getElementById('flipPrev').onclick = () => pageFlip.flipPrev();
     document.getElementById('flipNext').onclick = () => pageFlip.flipNext();
   }catch(err){
@@ -1141,7 +1172,7 @@ function bindLearnerRec(area){
         if(learnerRec&&learnerRec.state==='recording'){ learnerRec.stop(); return; }
         const stream=await navigator.mediaDevices.getUserMedia({audio:true});
         learnerChunks=[];
-        const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
+        const mime = pickAudioMime();
         learnerRec=new MediaRecorder(stream,{mimeType:mime});
         learnerRec.ondataavailable=e=>{ if(e.data.size) learnerChunks.push(e.data); };
         learnerRec.onstop=()=>{
@@ -1167,7 +1198,7 @@ function bindLearnerRec(area){
     const b64=await fileToBase64(pendingBlob);
     const r=getCurrent();
     if(r&&r.chapters[idx]){
-      r.chapters[idx].learnerAudio=b64; r.chapters[idx].learnerAudioName='voz-lector.webm';
+      r.chapters[idx].learnerAudio=b64; r.chapters[idx].learnerAudioName='voz-lector.'+audioExt(pickAudioMime());
       try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
       updatePreview(); toast('Voice saved');
     }
@@ -1190,13 +1221,13 @@ document.getElementById('btnRecord').onclick=async()=>{
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     recChunks=[];
-    const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
+    const mime = pickAudioMime();
     mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
     mediaRecorder.ondataavailable=e=>{ if(e.data.size) recChunks.push(e.data); };
     mediaRecorder.onstop=async()=>{
       stream.getTracks().forEach(t=>t.stop());
       const blob=new Blob(recChunks,{type:mime});
-      await setChapterAudio(blob, 'mi-voz-cap'+(activeChapterIdx+1)+'.webm');
+      await setChapterAudio(blob, 'mi-voz-cap'+(activeChapterIdx+1)+'.'+audioExt(mime));
       document.getElementById('btnRecord').classList.remove('recording');
       document.getElementById('btnRecord').style.display='';
       document.getElementById('btnStopRec').style.display='none';
@@ -1224,7 +1255,7 @@ async function setChapterAudio(fileOrBlob, displayName){
   document.getElementById('chAudioPlayerWrap').style.display='block';
   document.getElementById('chAudioBox').classList.add('has-audio');
   document.getElementById('chAudioZone').style.display='none';
-  updatePreview(); toast('Chapter audio ready');
+  updatePreview(); markDirty(); toast('Chapter audio ready');
 }
 document.getElementById('chAudioZone').onclick=()=>document.getElementById('chAudioInput').click();
 document.getElementById('chAudioInput').onchange=async()=>{ const f=document.getElementById('chAudioInput').files[0]; if(f) await setChapterAudio(f); };
@@ -1235,7 +1266,7 @@ document.getElementById('removeChAudio').onclick=()=>{
   document.getElementById('chAudioPlayerWrap').style.display='none';
   document.getElementById('chAudioBox').classList.remove('has-audio');
   document.getElementById('chAudioZone').style.display='block';
-  updatePreview();
+  updatePreview(); markDirty();
 };
 
 /* Import */
@@ -1365,7 +1396,7 @@ document.getElementById('btnImportConfirm').onclick=async()=>{
     });
   }
   renderKeywords();
-  activeChapterIdx=0; renderChaptersList(); loadChapterEditor(0); updateChecklist(); updatePreview();
+  activeChapterIdx=0; renderChaptersList(); loadChapterEditor(0); updateChecklist(); updatePreview(); markDirty();
   try { await saveReader(r); } catch(e){ toast('Save failed','error'); }
   document.querySelector('[data-tab="capitulos"]').click();
   document.getElementById('importStatus').textContent='Applied: '+r.chapters.length+' chapter(s).';
@@ -1383,10 +1414,17 @@ document.getElementById('btnDelete').onclick=deleteReader;
 document.getElementById('btnAddChar').onclick=addCharacter;
 document.getElementById('btnAddKeyword').onclick=addKeyword;
 document.getElementById('btnAddChapter').onclick=addChapter;
-document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return; r.chapters[activeChapterIdx].questions.push({q:'',options:['','',''],correct:0}); renderQuestionsEditor(r.chapters[activeChapterIdx]); updatePreview(); };
+document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return; r.chapters[activeChapterIdx].questions.push({q:'',options:['','',''],correct:0}); renderQuestionsEditor(r.chapters[activeChapterIdx]); updatePreview(); markDirty(); };
+
 ['fieldTitle','fieldLevel','chTitle','chText'].forEach(id=>{
-  document.getElementById(id).oninput=()=>{ collectFromForm(); if(id==='chTitle'||id==='fieldTitle') renderChaptersList(); updatePreview(); };
+  document.getElementById(id).oninput=()=>{ 
+    collectFromForm(); 
+    markDirty(); 
+    if(id==='chTitle'||id==='fieldTitle') renderChaptersList(); 
+    updatePreview(); 
+  };
 });
+
 setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover', b64=>{ const r=getCurrent(); if(r){ r.coverImage=b64; updatePreview(); }});
 setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
 
