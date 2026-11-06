@@ -20,6 +20,31 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fondo);color:var(--texto);line-height:1.55;min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font-family:inherit}
 
+/* === BOTONES DE NAVEGACIÓN ATRÁS === */
+.btn-back-nav {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  z-index: 10;
+  backdrop-filter: blur(5px);
+}
+.btn-back-nav:hover { background: rgba(255,255,255,0.4); }
+.btn-back-dark {
+  background: #fff;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  box-shadow: var(--sombra);
+}
+.btn-back-dark:hover { background: #f1f5f9; }
+
 /* === VISTAS FULLSCREEN (Bienvenida, Login, Dashboard) === */
 .fullscreen-view { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; }
 .fullscreen-view.active { display: flex; }
@@ -36,14 +61,14 @@ button,input,select,textarea{font-family:inherit}
 
 /* 2. Pantalla de Login */
 #viewLogin { background: var(--fondo); justify-content: center; align-items: center; }
-.login-box { background: #fff; padding: 40px; border-radius: 20px; box-shadow: var(--sombra); width: 100%; max-width: 400px; text-align: center; }
+.login-box { background: #fff; padding: 40px; border-radius: 20px; box-shadow: var(--sombra); width: 100%; max-width: 400px; text-align: center; position: relative; }
 .login-box h2 { color: var(--azul); margin-bottom: 20px; font-size: 1.8rem; }
 .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--borde); border-radius: 10px; font-size: 1rem; }
 .login-box button { width: 100%; padding: 12px; background: var(--azul-medio); color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 .login-box button:hover { background: var(--azul); }
 
 /* 3. Dashboard (Dos pestañas grandes) */
-#viewDashboard { background: var(--fondo); padding: 40px; align-items: center; }
+#viewDashboard { background: var(--fondo); padding: 40px; align-items: center; position: relative; overflow-y: auto; }
 .dashboard-header { text-align: center; margin-bottom: 40px; margin-top: 40px; }
 .dashboard-header h1 { color: var(--azul); font-size: 2.2rem; font-weight: 800; }
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; max-width: 1000px; }
@@ -238,7 +263,6 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
 <!-- 1. PANTALLA DE BIENVENIDA (Carrusel) -->
 <div class="fullscreen-view active" id="viewWelcome">
-  <!-- Las imágenes se cargan dinámicamente con JS -->
   <div class="slide-bg active" id="slide1"></div>
   <div class="slide-bg" id="slide2"></div>
   <div class="slide-bg" id="slide3"></div>
@@ -251,6 +275,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
 <!-- 2. PANTALLA DE LOGIN -->
 <div class="fullscreen-view" id="viewLogin">
+  <button class="btn-back-nav btn-back-dark" onclick="goBack()">← Volver</button>
   <div class="login-box">
     <h2>Acceso Docente</h2>
     <p class="hint" style="margin-bottom:20px">Ingresa tus credenciales para administrar los libros.</p>
@@ -263,19 +288,18 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
 <!-- 3. DASHBOARD (Dos pestañas) -->
 <div class="fullscreen-view" id="viewDashboard">
+  <button class="btn-back-nav btn-back-dark" onclick="goBack()">← Cerrar Sesión</button>
   <div class="dashboard-header">
     <h1>¡Hola, Profesor!</h1>
     <p>¿Qué te gustaría hacer hoy?</p>
   </div>
   <div class="dashboard-grid">
-    <!-- Pestaña 1: Mi próxima lectura -->
     <div class="dash-card next-read-bg" onclick="alert('Aquí iría la vista del alumno para leer el próximo libro.')">
       <div class="book-icon-img">📖</div>
       <h2>Mi próxima lectura</h2>
       <p>Continúa donde lo dejaste o explora nuevas historias.</p>
     </div>
     
-    <!-- Pestaña 2: Mis Libros (El ícono del librito) -->
     <div class="dash-card my-books-bg" onclick="openReaderPanel()">
       <div class="book-icon-img">📚</div>
       <h2>Mis Libros</h2>
@@ -431,10 +455,10 @@ const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ======================
 
-// === SISTEMA DE VISTAS Y NAVEGACIÓN ===
+// === SISTEMA DE VISTAS Y NAVEGACIÓN (HISTORY API) ===
 const views = ['viewWelcome', 'viewLogin', 'viewDashboard', 'appContainer'];
 
-function switchView(viewId) {
+function navigate(viewId, push = true) {
   views.forEach(v => {
     const el = document.getElementById(v);
     if (v === viewId) {
@@ -444,6 +468,7 @@ function switchView(viewId) {
       } else {
         el.classList.add('active');
         if (v === 'viewDashboard') document.body.style.overflow = 'auto';
+        else document.body.style.overflow = 'hidden';
       }
     } else {
       if (v === 'appContainer') el.style.display = 'none';
@@ -451,42 +476,50 @@ function switchView(viewId) {
     }
   });
 
-  // Resetear scroll interno
   if (viewId === 'viewDashboard') window.scrollTo(0,0);
-}
 
-function goToLogin() {
-  switchView('viewLogin');
-}
-
-function doLogin() {
-  const email = document.getElementById('loginEmail').value;
-  const pass = document.getElementById('loginPass').value;
-  
-  // Credenciales de prueba
-  if (email === 'profesor@reader.com' && pass === '123456') {
-    toast('Bienvenido Profesor');
-    switchView('viewDashboard');
-  } else {
-    toast('Credenciales incorrectas. Usa profesor@reader.com / 123456', 'error');
+  // Guardar en el historial del navegador
+  if (push) {
+    history.pushState({ view: viewId }, '', '#' + viewId);
   }
 }
 
-function goToDashboard() {
-  switchView('viewDashboard');
+// Escuchar el botón "Atrás" del navegador
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.view) {
+    navigate(e.state.view, false);
+  } else {
+    navigate('viewWelcome', false);
+  }
+});
+
+// Función para botones de "Volver"
+function goBack() {
+  history.back();
 }
 
-function openReaderPanel() {
-  switchView('appContainer');
-  showView('List'); // Del código original
+// Inicializar el estado del historial al cargar
+if (window.location.hash) {
+  const initialView = window.location.hash.replace('#', '');
+  if (views.includes(initialView)) {
+    navigate(initialView, false);
+  } else {
+    history.replaceState({ view: 'viewWelcome' }, '', '#viewWelcome');
+  }
+} else {
+  history.replaceState({ view: 'viewWelcome' }, '', '#viewWelcome');
 }
+
+function goToLogin() { navigate('viewLogin'); }
+function goToDashboard() { navigate('viewDashboard'); }
+function openReaderPanel() { navigate('appContainer'); showView('List'); }
 // =========================================
 
 // === CARRUSEL DE BIENVENIDA ===
 const slides = [
-  'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop', // Biblioteca
-  'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop', // Libro abierto
-  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000&auto=format&fit=crop'  // Libros estantería
+  'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000&auto=format&fit=crop'
 ];
 let currentSlide = 0;
 
@@ -501,14 +534,13 @@ function initCarousel() {
     bgElements[currentSlide].classList.remove('active');
     currentSlide = (currentSlide + 1) % slides.length;
     bgElements[currentSlide].classList.add('active');
-  }, 4000); // Cambia cada 4 segundos
+  }, 4000);
 }
 // ==================================
 
 const DICT = {
   castle:  { m: 'a large strong building where a king or queen lives', ipa: '/ˈkɑːsl/' },
-  ghost:   { m: 'the spirit of a dead person', ipa: '/ɡəʊst/' },
-  // (Mantenemos las palabras básicas para no hacer el código inmenso)
+  ghost:   { m: 'the spirit of a dead person', ipa: '/ɡəʊst/' }
 };
 
 let readers = [];
@@ -931,6 +963,18 @@ document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const
 
 setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover', b64=>{ const r=getCurrent(); if(r){ r.coverImage=b64; updatePreview(); }});
 setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  
+  if (email === 'profesor@reader.com' && pass === '123456') {
+    toast('Bienvenido Profesor');
+    navigate('viewDashboard');
+  } else {
+    toast('Credenciales incorrectas. Usa profesor@reader.com / 123456', 'error');
+  }
+}
 
 // INICIALIZACIÓN FINAL
 initCarousel();
