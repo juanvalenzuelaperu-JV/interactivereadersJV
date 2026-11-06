@@ -20,23 +20,21 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fondo);color:var(--texto);line-height:1.55;min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font-family:inherit}
 
-/* === VISTAS FULLSCREEN (Bienvenida, Login, Dashboard) === */
+/* === VISTAS FULLSCREEN === */
 .fullscreen-view { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; }
 .fullscreen-view.active { display: flex; }
 
-/* 1. Pantalla de Bienvenida (Slides) */
+/* 1. Pantalla de Bienvenida */
 #viewWelcome { background: #000; justify-content: center; align-items: center; color: #fff; overflow: hidden; }
 .slide-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; z-index: 1; }
 .slide-bg.active { opacity: 1; }
 
-/* Nuevo Top Bar en Bienvenida */
+/* Barra Superior (Buscador y Botón Readers) */
 .welcome-topbar {
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 20px 30px; z-index: 10;
 }
-
-/* Caja de búsqueda */
 .search-container { position: relative; width: 100%; max-width: 350px; }
 .search-box {
   display: flex; align-items: center;
@@ -56,7 +54,6 @@ button,input,select,textarea{font-family:inherit}
 }
 .search-box button:hover { transform: scale(1.1); }
 
-/* Autocompletado */
 .autocomplete-items {
   position: absolute; top: 100%; left: 0; right: 0;
   background: #fff; border-radius: 12px; margin-top: 8px;
@@ -69,7 +66,8 @@ button,input,select,textarea{font-family:inherit}
 .autocomplete-items div:last-child { border-bottom: none; }
 .autocomplete-items div:hover { background: var(--azul-claro); color: var(--azul); }
 
-/* Botón Readers (Top Right) */
+/* Botón Readers (Top Right) y Caja de Alumnos */
+.right-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .welcome-logo {
   background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.2);
@@ -79,19 +77,65 @@ button,input,select,textarea{font-family:inherit}
 }
 .welcome-logo:hover { background: rgba(0,0,0,0.6); transform: scale(1.05); }
 
-/* Botón Comenzar (Centro) */
-.welcome-center { position: relative; z-index: 5; text-align: center; }
-.welcome-center p { font-size: 1.5rem; margin-bottom: 30px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
-.btn-large { padding: 16px 40px; font-size: 1.1rem; border-radius: 50px; font-weight: 800; border: none; cursor: pointer; transition: 0.3s; background: var(--azul-medio); color: #fff; box-shadow: 0 4px 15px rgba(0,102,204,0.4); }
-.btn-large:hover { transform: scale(1.05); background: var(--azul); }
+.access-box {
+  display: flex; align-items: center;
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50px;
+  padding: 5px 15px; transition: all 0.3s ease;
+  opacity: 0; transform: translateY(-10px); pointer-events: none;
+}
+.access-box.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.access-box input { background: transparent; border: none; color: #fff; padding: 8px; font-size: 0.9rem; outline: none; width: 150px; }
+.access-box button { background: var(--azul-medio); color: #fff; border: none; border-radius: 20px; padding: 6px 15px; font-weight: bold; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
 
-/* 2. Pantalla de Login */
+/* === BOTÓN SECRETO ADMIN (LIBRITO INFERIOR DERECHO) === */
+.admin-book-icon {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  font-size: 3.5rem;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 15px rgba(255,255,255,0.3));
+  animation: float 3s ease-in-out infinite;
+}
+.admin-book-icon:hover {
+  opacity: 1;
+  transform: scale(1.1) rotate(-5deg);
+  filter: drop-shadow(0 0 25px rgba(255,255,255,0.8));
+}
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Modal de Login Admin (Glassmorphism) */
+#adminLoginModal .modal {
+  background: rgba(15, 23, 42, 0.85); /* Fondo oscuro semitransparente */
+  backdrop-filter: blur(15px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  max-width: 350px;
+}
+#adminLoginModal h3 { color: white; font-size: 1.5rem; margin-bottom: 20px; }
+#adminLoginModal input {
+  width: 100%; padding: 12px; margin-bottom: 15px;
+  border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1); color: white; font-size: 1rem;
+}
+#adminLoginModal input:focus { outline: none; border-color: var(--acento); }
+#adminLoginModal input::placeholder { color: rgba(255,255,255,0.5); }
+
+/* 2. Pantalla de Login (Oculta pero existente por si acaso) */
 #viewLogin { background: var(--fondo); justify-content: center; align-items: center; }
 .login-box { background: #fff; padding: 40px; border-radius: 20px; box-shadow: var(--sombra); width: 100%; max-width: 400px; text-align: center; position: relative; }
 .login-box h2 { color: var(--azul); margin-bottom: 20px; font-size: 1.8rem; }
 .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--borde); border-radius: 10px; font-size: 1rem; }
 .login-box button { width: 100%; padding: 12px; background: var(--azul-medio); color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-.login-box button:hover { background: var(--azul); }
 
 /* 3. Dashboard */
 #viewDashboard { background: var(--fondo); padding: 40px; align-items: center; position: relative; overflow-y: auto; }
@@ -101,8 +145,7 @@ button,input,select,textarea{font-family:inherit}
 .dash-card { background: #fff; border-radius: 20px; box-shadow: var(--sombra); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; cursor: pointer; transition: 0.3s; border: 2px solid transparent; height: 400px; text-align: center; position: relative; overflow: hidden; }
 .dash-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(15,23,42,.15); border-color: var(--talento); }
 .dash-card h2 { color: var(--azul); font-size: 1.8rem; margin-bottom: 10px; z-index: 2; }
-.dash-card p { color: var(--gris); font-size: 1rem; z-index: 2; }
-.book-icon-img { font-size: 8rem; margin-bottom: 20px; z-index: 2; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); transition: 0.3s; }
+.book-icon-img { font-size: 8rem; margin-bottom: 20px; z-index: 2; transition: 0.3s; }
 .dash-card:hover .book-icon-img { transform: scale(1.1) rotate(-5deg); }
 .next-read-bg { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
 .my-books-bg { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
@@ -123,12 +166,8 @@ button,input,select,textarea{font-family:inherit}
 .btn-ghost{background:transparent;border-color:var(--borde);color:var(--texto)}.btn-ghost:hover:not(:disabled){background:#f8fafc}
 .btn-mini{padding:7px 12px;font-size:.8rem}.btn-xs{padding:5px 10px;font-size:.75rem;border-radius:8px}
 .btn-icon{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--borde);background:#f8fafc;display:grid;place-items:center;cursor:pointer;font-size:.9rem;flex-shrink:0}
-.btn-icon:hover{background:#e2e8f0}
 .btn-speak{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--azul-medio),var(--azul));color:#fff;display:grid;place-items:center;cursor:pointer;font-size:1rem;flex-shrink:0}
-.btn-speak:hover{transform:scale(1.08)}.btn-speak.playing{background:linear-gradient(135deg,var(--verde),#15803d)}
 .btn-rec{background:#fee2e2;color:#b91c1c;border:2px solid #fecaca;padding:8px 14px;border-radius:50px;font-weight:700;font-size:.82rem;cursor:pointer}
-.btn-rec.recording{background:#dc2626;color:#fff;animation:pulse-rec 1s infinite}
-@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
 .container{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .page-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}
 .page-header h1{font-size:1.6rem;color:var(--azul);font-weight:800}.page-header h1 span{color:var(--talento)}
@@ -154,40 +193,25 @@ button,input,select,textarea{font-family:inherit}
 .preview-panel .panel-header{background:linear-gradient(120deg,var(--azul),var(--azul-medio))}
 .panel-tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--borde);background:#f8fafc}
 .panel-tabs button{flex:1;min-width:70px;padding:10px 6px;border:none;background:transparent;font-size:.75rem;font-weight:700;color:var(--gris);cursor:pointer;border-bottom:3px solid transparent}
-.panel-tabs button:hover{color:var(--talento);background:#eef2ff}
 .panel-tabs button.active{color:var(--talento);border-bottom-color:var(--talento);background:#fff}
 .panel-body{padding:16px;overflow-y:auto;flex:1;max-height:calc(100vh - 220px)}
 .tab-pane{display:none}.tab-pane.active{display:block}
 .field{margin-bottom:14px}
-.field label{display:block;font-size:.75rem;font-weight:700;color:var(--gris);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.field label{display:block;font-size:.75rem;font-weight:700;color:var(--gris);margin-bottom:5px;text-transform:uppercase}
 .field input[type=text],.field select,.field textarea{width:100%;padding:10px 12px;border:2px solid var(--borde);border-radius:10px;font-size:.9rem}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--talento);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
 .field textarea{min-height:100px;resize:vertical}
 .section-title{font-size:.84rem;font-weight:800;color:var(--azul);margin:14px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--azul-claro);display:flex;align-items:center;justify-content:space-between;gap:8px}
 .hint{font-size:.75rem;color:var(--gris);margin-bottom:8px}
 .char-list,.kw-list,.chapters-list{display:flex;flex-direction:column;gap:10px}
 .char-card{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#f8fafc;display:grid;grid-template-columns:100px 1fr auto;gap:12px;align-items:start}
 .char-photo{width:100px;height:120px;border-radius:10px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);display:grid;place-items:center;font-size:1.8rem;overflow:hidden;cursor:pointer;border:2px dashed #a5b4fc}
-.char-photo img{width:100%;height:100%;object-fit:cover;object-position:center top}
-.char-photo input{display:none}
+.char-photo img{width:100%;height:100%;object-fit:cover}
 .char-name-row{display:flex;gap:6px;align-items:center}
 .char-name-row input,.char-fields textarea{width:100%;padding:7px 10px;border:1.5px solid var(--borde);border-radius:8px;font-size:.85rem}
-.char-fields{display:flex;flex-direction:column;gap:6px;min-width:0}
-.char-fields textarea{min-height:56px;resize:vertical}
-.kw-row{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#fafbff}
-.kw-word{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.kw-word input{flex:1;padding:8px 10px;border:1.5px solid var(--borde);border-radius:8px;font-weight:700;font-size:.88rem}
-.kw-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.kw-meta label{font-size:.68rem;font-weight:700;color:var(--gris);display:block;margin-bottom:2px}
-.kw-meta input{width:100%;padding:7px 9px;border:1.5px solid var(--borde);border-radius:8px;font-size:.8rem}
-.kw-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chapter-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--borde);background:#f8fafc;cursor:pointer}
-.chapter-item:hover{border-color:var(--talento);background:#eef2ff}
-.chapter-item.active{border-color:var(--talento);background:linear-gradient(90deg,#eef2ff,#e0e7ff);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
-.chapter-item .num{width:26px;height:26px;border-radius:7px;background:var(--talento);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.75rem;flex-shrink:0}
-.chapter-item .title{flex:1;font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapter-item.active{border-color:var(--talento);background:linear-gradient(90deg,#eef2ff,#e0e7ff)}
+.chapter-item .num{width:26px;height:26px;border-radius:7px;background:var(--talento);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.75rem}
 .image-upload-zone{border:2px dashed var(--borde);border-radius:12px;padding:14px;text-align:center;background:#f8fafc;cursor:pointer;font-size:.84rem;color:var(--gris)}
-.image-upload-zone:hover,.image-upload-zone.dragover{border-color:var(--talento);background:#eef2ff}
 .image-upload-zone input{display:none}
 .image-preview{margin-top:8px;border-radius:10px;overflow:hidden;max-height:130px;position:relative}
 .image-preview img{width:100%;height:130px;object-fit:cover;display:block}
@@ -196,168 +220,49 @@ button,input,select,textarea{font-family:inherit}
 .audio-box.has-audio{background:#f0fdf4;border-color:#86efac}
 .rec-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .audio-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
-.audio-controls audio{flex:1;min-width:160px;height:34px}
 .mcq-card{border:1.5px solid var(--borde);border-radius:12px;padding:12px;background:#fafbff;margin-bottom:10px}
 .mcq-card .mcq-q{width:100%;padding:8px 10px;border:1.5px solid var(--borde);border-radius:8px;font-size:.86rem;margin-bottom:8px;font-weight:600}
 .mcq-opt{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .mcq-opt input[type=text]{flex:1;padding:6px 9px;border:1.5px solid var(--borde);border-radius:8px;font-size:.82rem}
-.mcq-opt input[type=radio]{accent-color:var(--verde)}
-.mcq-opt label{font-size:.72rem;color:var(--gris);white-space:nowrap}
 .import-box{border:2px dashed var(--talento);border-radius:14px;padding:14px;background:linear-gradient(135deg,#eef2ff,#faf5ff);margin-bottom:12px}
 .import-box h4{color:var(--talento);font-size:.88rem;font-weight:800;margin-bottom:6px}
 .preview-scroll{padding:20px;overflow-y:auto;max-height:calc(100vh - 200px)}
 .book-cover-preview{background:linear-gradient(160deg,#0f172a,#1e293b 50%,#334155);border-radius:14px;padding:40px 24px;text-align:center;color:#fff;margin-bottom:20px;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
 .book-cover-preview.has-img{padding:0;min-height:220px}
 .book-cover-preview.has-img img{width:100%;height:220px;object-fit:cover;border-radius:14px}
-.book-cover-preview .cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78),transparent 55%);border-radius:14px;display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
 .book-cover-preview h2{font-size:1.5rem;font-weight:800}
-.chars-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:18px}
-.char-preview-card{background:#fff;border:1px solid var(--borde);border-radius:12px;padding:12px;text-align:center}
-.char-preview-card .avatar{width:80px;height:100px;border-radius:10px;margin:0 auto 8px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);overflow:hidden;display:grid;place-items:center}
-.char-preview-card .avatar img{width:100%;height:100%;object-fit:cover;object-position:center top}
-.char-preview-card .name-row{display:flex;align-items:center;justify-content:center;gap:6px}
-.char-preview-card h4{font-size:.86rem;color:var(--azul);font-weight:800}
-.char-preview-card p{font-size:.72rem;color:var(--gris)}
-.kw-preview-block{background:#f0f9ff;border-radius:12px;margin-bottom:18px;border-left:4px solid var(--azul-medio);padding:0;overflow:hidden}
-.kw-preview-block > summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:.82rem;font-weight:800;color:var(--azul);display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s}
-.kw-preview-block > summary::-webkit-details-marker{display:none}
-.kw-preview-block > summary::after{content:'▸';margin-left:auto;color:var(--azul-medio);font-size:.9rem;transition:transform .2s}
-.kw-preview-block[open] > summary::after{transform:rotate(90deg)}
-.kw-preview-block > summary:hover{background:#e0f2fe}
-.kw-preview-block .kw-inner{padding:0 14px 14px}
-.kw-preview-item{display:flex;align-items:center;gap:8px;font-size:.86rem;margin-bottom:6px;flex-wrap:wrap}
-.kw-preview-item .ipa{color:var(--talento);font-family:monospace}
 .chapter-preview{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:18px;margin-bottom:16px}
 .chapter-preview h3{color:var(--azul);font-size:1.1rem;font-weight:800;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--azul-claro)}
 .chapter-text{font-size:.92rem;line-height:1.7;margin-bottom:12px;white-space:pre-wrap}
 .chapter-img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px}
-.audio-player{background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:4px solid var(--verde);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.audio-player audio{flex:1;min-width:160px;height:34px}
-.reader-rec-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fef3c7;border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:4px solid var(--acento)}
-.questions-block{background:#f8fafc;border-radius:10px;padding:12px;border-left:4px solid var(--talento)}
-.preview-mcq{margin:8px 0;padding:10px;background:#f1f5f9;border-radius:8px}
-.preview-mcq .opt{margin:4px 0 4px 8px;font-size:.86rem}
-.preview-mcq .opt.correct{color:var(--verde);font-weight:700}
-.student-opt{display:block;margin:6px 0;padding:8px 12px;border:1.5px solid var(--borde);border-radius:8px;cursor:pointer;background:#fff}
-.student-opt:hover{border-color:var(--talento)}
-.student-opt.selected{border-color:var(--talento);background:#eef2ff}
-.student-opt.right{border-color:var(--verde);background:#f0fdf4}
-.student-opt.wrong{border-color:var(--rojo);background:#fef2f2}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);display:none;align-items:center;justify-content:center;z-index:300;padding:16px}
 .modal-overlay.show{display:flex}
 .modal{background:#fff;border-radius:16px;padding:22px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto}
 .modal h3{color:var(--azul);margin-bottom:10px;font-size:1.15rem}
-.modal ul{margin:10px 0 16px 18px;font-size:.9rem;color:var(--texto)}
 .modal-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .toast{position:fixed;bottom:24px;right:24px;z-index:400;background:#1e293b;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.88rem;transform:translateY(80px);opacity:0;transition:.3s}
 .toast.show{transform:translateY(0);opacity:1}.toast.success{background:#166534}.toast.error{background:#991b1b}
 .view{display:none}.view.active{display:block}
 .status-bar{font-size:.78rem;color:var(--gris);display:flex;gap:8px;align-items:center}
 .status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.saved{background:var(--verde)}
-.checklist{background:#f8fafc;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;font-size:.8rem;margin-top:8px}
-.checklist li{margin:4px 0}.checklist .ok{color:var(--verde)}.checklist .no{color:var(--rojo)}
-.mode-toggle{display:flex;gap:6px;background:#f1f5f9;padding:4px;border-radius:50px}
-.mode-toggle button{border:none;background:transparent;padding:6px 12px;border-radius:50px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--gris)}
-.mode-toggle button.active{background:#fff;color:var(--azul);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.chapter-chars{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.chapter-char-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--borde);border-radius:50px;background:#fff;cursor:pointer;font-size:.8rem;transition:.15s}
-.chapter-char-chip:hover{border-color:var(--talento)}
-.chapter-char-chip.assigned{background:#eef2ff;border-color:var(--talento);color:var(--talento);font-weight:700}
-.chapter-char-chip .avatar{width:22px;height:22px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);display:grid;place-items:center;font-size:.7rem}
-.chapter-char-chip .avatar img{width:100%;height:100%;object-fit:cover}
-.flipbook-wrap{padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;overflow-y:auto;max-height:calc(100vh - 200px)}
-#flipbook{width:100%;max-width:900px;height:600px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(15,23,42,.18);overflow:hidden}
-.flipbook-controls{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
-.flipbook-controls .page-indicator{font-size:.85rem;font-weight:700;color:var(--azul);min-width:100px;text-align:center}
-.page-content{padding:28px;background:#fff;height:100%;overflow-y:auto;font-size:.9rem;line-height:1.65}
-.page-content h3{color:var(--azul);font-size:1.15rem;font-weight:800;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--azul-claro)}
-.page-content .page-cover{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;background:linear-gradient(160deg,#0f172a,#1e293b);color:#fff;margin:-28px;padding:40px 24px}
-.page-content .page-cover h2{font-size:1.6rem;font-weight:800;margin-bottom:8px}
-.page-content .page-chars{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.page-content .page-char-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:50px;background:#eef2ff;color:var(--talento);font-size:.75rem;font-weight:700}
-.page-content .page-char-chip .avatar{width:20px;height:20px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#c7d2fe}
-.page-content .page-char-chip .avatar img{width:100%;height:100%;object-fit:cover}
-body.mode-student .chapter-text{ font-size:1.25rem; line-height:1.9; letter-spacing:.02em; color:#111827; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-body.mode-student .chapter-preview h3 { font-size:1.5rem; }
-body.mode-student .questions-block { font-size:1rem; }
-body.mode-student .student-opt { padding:14px 16px; font-size:1.05rem; border-width:2px; }
-body.mode-student .chapter-img { max-height:320px; }
-body.mode-student .kw-preview-item { font-size:1rem; }
 
-/* Responsive para celular */
+/* Responsive */
 @media(max-width: 768px) {
-  .welcome-topbar { flex-direction: column; gap: 15px; align-items: center; padding: 15px; }
-  .welcome-logo { order: -1; align-self: flex-end; } /* Botón arriba a la derecha */
-  .search-container { max-width: 100%; }
-}
-  /* Estilos para la caja de acceso */
-.right-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-.access-box {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
-  padding: 5px 15px;
-  transition: all 0.3s ease;
-  opacity: 0;
-  transform: translateY(-10px);
-  pointer-events: none;
-}
-.access-box.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-.access-box input {
-  background: transparent;
-  border: none;
-  color: #fff;
-  padding: 8px;
-  font-size: 0.9rem;
-  outline: none;
-  width: 150px;
-}
-.access-box input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-.access-box button {
-  background: var(--azul-medio);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 6px 15px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: 0.2s;
-}
-.access-box button:hover {
-  background: var(--azul);
-}
-
-/* Ajuste responsive para celular */
-@media(max-width: 768px) {
-  .access-box { flex-direction: row; padding: 5px 10px; }
-  .access-box input { width: 100px; }
+  .welcome-topbar { flex-direction: column; gap: 15px; align-items: center; }
+  .right-controls { align-items: center; width: 100%; }
+  .admin-book-icon { bottom: 20px; right: 20px; font-size: 2.5rem; }
 }
 </style>
 </head>
 <body>
 
-<!-- 1. PANTALLA DE BIENVENIDA (Carrusel) -->
+<!-- 1. PANTALLA DE BIENVENIDA -->
 <div class="fullscreen-view active" id="viewWelcome">
   <div class="slide-bg active" id="slide1"></div>
   <div class="slide-bg" id="slide2"></div>
   <div class="slide-bg" id="slide3"></div>
   
-  <!-- Barra Superior con Búsqueda y Botón Readers -->
+  <!-- Barra Superior -->
   <div class="welcome-topbar">
     <div class="search-container">
       <div class="search-box">
@@ -367,26 +272,42 @@ body.mode-student .kw-preview-item { font-size:1rem; }
       <div id="autocompleteList" class="autocomplete-items"></div>
     </div>
     
-    <!-- Nuevo bloque del lado derecho -->
     <div class="right-controls">
       <div id="accessBox" class="access-box">
         <input type="text" id="accessCode" placeholder="Código de acceso...">
         <button onclick="checkAccessCode()">Entrar</button>
-        <a href="#" onclick="event.preventDefault(); navigate('viewLogin')" style="color:#fff; font-size:0.7rem; margin-left:10px; text-decoration:none; opacity:0.6;">Profesor</a>
       </div>
       <div class="welcome-logo" onclick="toggleAccessBox()">Readers</div>
     </div>
   </div>
 
-<!-- 2. PANTALLA DE LOGIN -->
+  <!-- NUEVO: Librito Secreto Admin (Inferior Derecha) -->
+  <div class="admin-book-icon" onclick="openAdminLoginModal()" title="Acceso Creador">
+    📖
+  </div>
+</div>
+
+<!-- MODAL DE LOGIN ADMIN (Se abre al hacer clic en el librito) -->
+<div class="modal-overlay" id="adminLoginModal">
+  <div class="modal">
+    <h3>Acceso Creador</h3>
+    <p style="font-size: 0.8rem; margin-bottom: 15px; opacity: 0.7;">Ingresa tus credenciales para ir a tu tablero de cuentos.</p>
+    <input type="email" id="adminEmail" placeholder="Correo electrónico">
+    <input type="password" id="adminPass" placeholder="Contraseña">
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button class="btn btn-ghost" style="flex:1; color: white; border-color: rgba(255,255,255,0.2);" onclick="document.getElementById('adminLoginModal').classList.remove('show')">Cancelar</button>
+      <button class="btn btn-azul" style="flex:1;" onclick="adminLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. PANTALLA DE LOGIN (Antigua, por si acaso) -->
 <div class="fullscreen-view" id="viewLogin">
   <div class="login-box">
     <h2>Acceso Docente</h2>
-    <p class="hint" style="margin-bottom:20px">Ingresa tus credenciales para administrar los libros.</p>
     <input type="email" id="loginEmail" placeholder="Correo electrónico">
     <input type="password" id="loginPass" placeholder="Contraseña">
     <button onclick="doLogin()">Entrar al Panel</button>
-    <p class="hint" style="margin-top:15px;font-size:0.8rem;color:var(--gris)">Prueba: profesor@reader.com / 123456</p>
   </div>
 </div>
 
@@ -397,16 +318,13 @@ body.mode-student .kw-preview-item { font-size:1rem; }
     <p>¿Qué te gustaría hacer hoy?</p>
   </div>
   <div class="dashboard-grid">
-    <div class="dash-card next-read-bg" onclick="alert('Aquí iría la vista del alumno para leer el próximo libro.')">
+    <div class="dash-card next-read-bg" onclick="alert('Aquí iría la vista del alumno.')">
       <div class="book-icon-img">📖</div>
       <h2>Mi próxima lectura</h2>
-      <p>Continúa donde lo dejaste o explora nuevas historias.</p>
     </div>
-    
     <div class="dash-card my-books-bg" onclick="navigate('appContainer', 'List')">
       <div class="book-icon-img">📚</div>
       <h2>Mis Libros</h2>
-      <p>Administra, crea y edita los libros interactivos.</p>
     </div>
   </div>
 </div>
@@ -426,7 +344,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
   <main class="container">
     <div class="view" id="viewList">
       <div class="page-header">
-        <div><h1>📚 <span>Readers</span></h1><p>Create interactive books. Projects are stored in Supabase.</p></div>
+        <div><h1>📚 <span>Readers</span></h1><p>Create interactive books.</p></div>
         <button class="btn btn-talento" id="btnNewReader" type="button">＋ New Reader</button>
       </div>
       <div class="readers-grid" id="readersGrid"></div>
@@ -456,19 +374,18 @@ body.mode-student .kw-preview-item { font-size:1rem; }
           </div>
           <div class="panel-body">
             <div class="tab-pane active" id="tab-libro">
-              <div class="field"><label>Book title</label><input type="text" id="fieldTitle" placeholder="Ej: Hamlet – A Simplified Reader"></div>
+              <div class="field"><label>Book title</label><input type="text" id="fieldTitle" placeholder="Ej: Hamlet"></div>
               <div class="field"><label>CEFR level</label>
                 <select id="fieldLevel"><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C1">C1</option></select>
               </div>
               <div class="field"><label>Cover image</label>
-                <div class="image-upload-zone" id="coverUploadZone">🖼 Click or drop cover image<input type="file" id="coverInput" accept="image/*"></div>
+                <div class="image-upload-zone" id="coverUploadZone">🖼 Click or drop cover<input type="file" id="coverInput" accept="image/*"></div>
                 <div class="image-preview" id="coverPreview" style="display:none"><img id="coverImg" alt=""><button type="button" class="remove-img" id="removeCover">✕</button></div>
               </div>
               <div class="checklist" id="publishCheck"></div>
             </div>
             <div class="tab-pane" id="tab-personajes">
-              <div class="section-title">👥 Characters (book level) <button class="btn btn-talento btn-xs" id="btnAddChar" type="button">＋ Nuevo</button></div>
-              <p class="hint">Los personajes se asignan a capítulos desde el editor de cada capítulo.</p>
+              <div class="section-title">👥 Characters <button class="btn btn-talento btn-xs" id="btnAddChar" type="button">＋ Nuevo</button></div>
               <div class="char-list" id="charList"></div>
             </div>
             <div class="tab-pane" id="tab-capitulos">
@@ -483,16 +400,15 @@ body.mode-student .kw-preview-item { font-size:1rem; }
                   <div class="image-preview" id="chImgPreview" style="display:none"><img id="chImg" alt=""><button type="button" class="remove-img" id="removeChImg">✕</button></div>
                 </div>
                 <div class="section-title">👥 Personajes en este capítulo</div>
-                <p class="hint">Marca qué personajes aparecen en este capítulo.</p>
                 <div class="chapter-chars" id="chapterChars"></div>
-                <div class="field" style="margin-top:14px"><label>Teacher audio (your voice)</label>
+                <div class="field" style="margin-top:14px"><label>Teacher audio</label>
                   <div class="audio-box" id="chAudioBox">
                     <div class="rec-row">
                       <button type="button" class="btn-rec" id="btnRecord">🎙 Record my voice</button>
                       <button type="button" class="btn btn-ghost btn-xs" id="btnStopRec" style="display:none">⏹ Stop</button>
                       <span id="recTimer" class="hint" style="display:none">0:00</span>
                     </div>
-                    <div class="image-upload-zone" id="chAudioZone" style="margin-top:8px;padding:10px;font-size:.8rem">or upload an audio file<input type="file" id="chAudioInput" accept="audio/*"></div>
+                    <div class="image-upload-zone" id="chAudioZone" style="margin-top:8px;padding:10px;">or upload audio<input type="file" id="chAudioInput" accept="audio/*"></div>
                     <div id="chAudioPlayerWrap" style="display:none">
                       <div id="chAudioName" style="font-size:.82rem;font-weight:600;color:var(--azul)"></div>
                       <div class="audio-controls"><audio id="chAudioPlayer" controls></audio>
@@ -511,9 +427,8 @@ body.mode-student .kw-preview-item { font-size:1rem; }
               <div class="import-box">
                 <h4>📥 Import PDF or DOCX</h4>
                 <div class="image-upload-zone" id="importZone">📄 Click or drop PDF/DOCX<input type="file" id="importInput" accept=".pdf,.docx"></div>
-                <div id="importFileName" class="hint" style="display:none;margin-top:8px"></div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-                  <button type="button" class="btn btn-talento btn-mini" id="btnTrasladar" disabled>➡️ Transfer to Panel</button>
+                <div style="margin-top:10px;display:flex;gap:8px;">
+                  <button type="button" class="btn btn-talento btn-mini" id="btnTrasladar" disabled>➡️ Transfer</button>
                   <button type="button" class="btn btn-ghost btn-mini" id="btnClearImport" style="display:none">Clear</button>
                 </div>
                 <div id="importStatus" class="hint" style="margin-top:8px"></div>
@@ -522,16 +437,8 @@ body.mode-student .kw-preview-item { font-size:1rem; }
           </div>
         </div>
         <div class="panel preview-panel">
-          <div class="panel-header" id="previewHeader">👁 Preview (edit mode)</div>
+          <div class="panel-header" id="previewHeader">👁 Preview</div>
           <div class="preview-scroll" id="previewArea"></div>
-          <div class="flipbook-wrap" id="flipbookWrap" style="display:none">
-            <div id="flipbook"></div>
-            <div class="flipbook-controls">
-              <button type="button" class="btn btn-ghost btn-mini" id="flipPrev">← Anterior</button>
-              <span class="page-indicator" id="flipIndicator">1 / 1</span>
-              <button type="button" class="btn btn-ghost btn-mini" id="flipNext">Siguiente →</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -544,7 +451,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
     <ul id="importSummary"></ul>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost btn-mini" id="btnImportCancel">Cancel</button>
-      <button type="button" class="btn btn-talento btn-mini" id="btnImportConfirm">Apply to panel</button>
+      <button type="button" class="btn btn-talento btn-mini" id="btnImportConfirm">Apply</button>
     </div>
   </div>
 </div>
@@ -558,7 +465,7 @@ const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ======================
 
-// === SISTEMA DE NAVEGACIÓN (ROUTER) ===
+// === NAVEGACIÓN ===
 let isPopping = false;
 function navigate(viewId, subview = null, push = true) {
   document.querySelectorAll('.fullscreen-view').forEach(el => el.classList.remove('active'));
@@ -581,8 +488,6 @@ function navigate(viewId, subview = null, push = true) {
     if (target) target.classList.add('active');
   }
 
-  if (viewId === 'viewDashboard') window.scrollTo(0,0);
-
   if (push && !isPopping) {
     const hash = subview ? `#${viewId}_${subview}` : `#${viewId}`;
     history.pushState({ viewId, subview }, '', hash);
@@ -599,17 +504,16 @@ window.addEventListener('popstate', (e) => {
 if (!history.state) history.replaceState({ viewId: 'viewWelcome', subview: null }, '', '#viewWelcome');
 else navigate(history.state.viewId, history.state.subview, false);
 
-// === CARRUSEL Y BUSQUEDA MÁGICA ===
+// === CARRUSEL Y BÚSQUEDA ===
 const defaultSlides = [
-  'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop', // Biblioteca
-  'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop', // Libro abierto
-  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000&auto=format&fit=crop'  // Libros estantería
+  'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000&auto=format&fit=crop'
 ];
-
 const harryPotterSlides = [
-  'https://images.unsplash.com/photo-1548625361-ec8b8f1c47f4?q=80&w=2000&auto=format&fit=crop', // Castillo mágico/Hogwarts
-  'https://images.unsplash.com/photo-1533514114760-4384f1e4e7e1?q=80&w=2000&auto=format&fit=crop', // Velas mágicas
-  'https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=2000&auto=format&fit=crop'  // Varita mágica
+  'https://images.unsplash.com/photo-1548625361-ec8b8f1c47f4?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1533514114760-4384f1e4e7e1?q=80&w=2000&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=2000&auto=format&fit=crop'
 ];
 
 let currentSlide = 0;
@@ -617,20 +521,12 @@ let carouselInterval = null;
 
 function initCarousel(slides) {
   if (carouselInterval) clearInterval(carouselInterval);
-  
   document.getElementById('slide1').style.backgroundImage = `url('${slides[0]}')`;
   document.getElementById('slide2').style.backgroundImage = `url('${slides[1]}')`;
   document.getElementById('slide3').style.backgroundImage = `url('${slides[2]}')`;
-  
   const bgElements = [document.getElementById('slide1'), document.getElementById('slide2'), document.getElementById('slide3')];
-  
-  // Reiniciar el estado visual
-  bgElements.forEach((el, i) => {
-    if(i === 0) el.classList.add('active');
-    else el.classList.remove('active');
-  });
+  bgElements.forEach((el, i) => { if(i === 0) el.classList.add('active'); else el.classList.remove('active'); });
   currentSlide = 0;
-
   carouselInterval = setInterval(() => {
     bgElements[currentSlide].classList.remove('active');
     currentSlide = (currentSlide + 1) % slides.length;
@@ -638,7 +534,6 @@ function initCarousel(slides) {
   }, 4000);
 }
 
-// === LÓGICA DE AUTOCOMPLETADO ===
 const searchInput = document.getElementById('searchInput');
 const autocompleteList = document.getElementById('autocompleteList');
 const fakeDatabase = ["Harry Potter and the Philosopher's Stone", "Harry Potter and the Chamber of Secrets", "The Lord of the Rings", "The Chronicles of Narnia", "Hamlet"];
@@ -647,143 +542,98 @@ searchInput.addEventListener('input', function() {
   const val = this.value.toLowerCase();
   autocompleteList.innerHTML = '';
   if (!val) { autocompleteList.style.display = 'none'; return; }
-  
   const matches = fakeDatabase.filter(item => item.toLowerCase().includes(val));
   if (matches.length > 0) {
     autocompleteList.style.display = 'block';
     matches.forEach(match => {
       const div = document.createElement('div');
-      // Resaltar la parte que coincide
       const index = match.toLowerCase().indexOf(val);
       div.innerHTML = match.substring(0, index) + "<strong>" + match.substring(index, index + val.length) + "</strong>" + match.substring(index + val.length);
-      div.addEventListener('click', function() {
-        searchInput.value = match;
-        autocompleteList.style.display = 'none';
-        simulateSearch(); // Ejecutar la búsqueda al hacer clic
-      });
+      div.addEventListener('click', function() { searchInput.value = match; autocompleteList.style.display = 'none'; simulateSearch(); });
       autocompleteList.appendChild(div);
     });
-  } else {
-    autocompleteList.style.display = 'none';
-  }
+  } else autocompleteList.style.display = 'none';
 });
 
-// Cerrar autocompletado al hacer clic fuera
 document.addEventListener('click', function(e) {
-  if (e.target !== searchInput && e.target !== autocompleteList) {
-    autocompleteList.style.display = 'none';
-  }
+  if (e.target !== searchInput && e.target !== autocompleteList) autocompleteList.style.display = 'none';
 });
 
 function simulateSearch() {
   const query = searchInput.value.toLowerCase();
   autocompleteList.style.display = 'none';
-  
   if (query.includes('harry') || query.includes('happy')) {
-    // Cambiar a tema Harry Potter
     initCarousel(harryPotterSlides);
     searchInput.value = "Harry Potter and the Philosopher's Stone";
-    // Efecto visual (opcional)
-    document.body.style.backgroundColor = '#0f172a'; 
   } else {
-    // Volver a tema normal
     initCarousel(defaultSlides);
-    document.body.style.backgroundColor = '#000';
   }
 }
+searchInput.addEventListener('keypress', function (e) { if (e.key === 'Enter') simulateSearch(); });
 
-  // === LÓGICA DE ACCESO DEL ALUMNO ===
+// === LÓGICA DE ACCESO ALUMNOS ===
 function toggleAccessBox() {
   const box = document.getElementById('accessBox');
   box.classList.toggle('show');
-  if (box.classList.contains('show')) {
-    document.getElementById('accessCode').focus();
-  }
+  if (box.classList.contains('show')) document.getElementById('accessCode').focus();
 }
 
 function checkAccessCode() {
   const code = document.getElementById('accessCode').value.trim();
-  
-  // CÓDIGO DE PRUEBA PARA EL ALUMNO
   if (code === '1234' || code.toLowerCase() === 'magia') {
-    // Buscar el último libro publicado por el administrador
     const publishedBooks = readers.filter(r => r.status === 'published');
-    
-    if (publishedBooks.length === 0) {
-      toast('Aún no hay libros publicados', 'error');
-      return;
-    }
-    
-    // Como los readers se cargan ordenados por fecha descendente, el primero es el último
-    const lastBook = publishedBooks[0]; 
-    openStudentReader(lastBook);
-    
+    if (publishedBooks.length === 0) { toast('Aún no hay libros publicados', 'error'); return; }
+    openStudentReader(publishedBooks[0]);
   } else {
     toast('Código incorrecto. Intenta con: 1234', 'error');
   }
 }
 
-// Función para mostrar el libro al alumno
 function openStudentReader(book) {
-  // Cerramos la cajita de acceso
   document.getElementById('accessBox').classList.remove('show');
   document.getElementById('accessCode').value = '';
-
-  // Creamos un modal gigante a pantalla completa para simular la portada del libro
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay show';
   overlay.id = 'studentModal';
-  overlay.style.background = 'rgba(0,0,0,0.9)'; // Fondo más oscuro para inmersión
-  
+  overlay.style.background = 'rgba(0,0,0,0.9)';
   overlay.innerHTML = `
-    <div style="text-align: center; color: #fff; animation: fadeIn 0.5s ease-out; width: 100%; max-width: 500px; padding: 20px;">
+    <div style="text-align: center; color: #fff; width: 100%; max-width: 500px; padding: 20px;">
       <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; color: var(--acento); margin-bottom: 20px;">Tu próxima lectura</p>
-      
-      ${book.coverImage 
-        ? `<img src="${book.coverImage}" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-bottom: 30px;">` 
-        : `<div style="width: 100%; height: 300px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 5rem; margin-bottom: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">📖</div>`
-      }
-      
+      ${book.coverImage ? `<img src="${book.coverImage}" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-bottom: 30px;">` : `<div style="width: 100%; height: 300px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 5rem; margin-bottom: 30px;">📖</div>`}
       <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 10px;">${book.title}</h1>
       <p style="color: #94a3b8; margin-bottom: 40px;">Nivel ${book.level} · ${book.chapters.length} capítulos</p>
-      
-      <button class="btn btn-azul" style="width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 50px;" onclick="startReading('${book.id}')">
-        Comenzar a leer 📖
-      </button>
-      
-      <button class="btn btn-ghost" style="width: 100%; margin-top: 15px; color: #94a3b8; border-color: #475569;" onclick="document.getElementById('studentModal').remove()">
-        Volver al inicio
-      </button>
-    </div>
-  `;
-  
+      <button class="btn btn-azul" style="width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 50px;" onclick="alert('Aquí se abre el visor del alumno')">Comenzar a leer 📖</button>
+      <button class="btn btn-ghost" style="width: 100%; margin-top: 15px; color: #94a3b8; border-color: #475569;" onclick="document.getElementById('studentModal').remove()">Volver</button>
+    </div>`;
   document.body.appendChild(overlay);
 }
 
-// Función que se ejecuta cuando el alumno hace clic en "Comenzar a leer"
-function startReading(bookId) {
-  document.getElementById('studentModal').remove();
-  // Aquí conectas con el visor de lectura (el "Modo Estudiante" que ya tienes)
-  alert('Aquí se abrirá el libro para leerlo (Modo Alumno).');
-  // Por ejemplo, podrías hacer: openReader(bookId) y ocultar los menús de admin.
+// === LÓGICA DE ACCESO ADMIN (LIBRITO) ===
+function openAdminLoginModal() {
+  document.getElementById('adminLoginModal').classList.add('show');
+  document.getElementById('adminEmail').focus();
 }
-// Permitir buscar con "Enter"
-searchInput.addEventListener('keypress', function (e) {
-  if (e.key === 'Enter') {
-    simulateSearch();
+
+function adminLogin() {
+  const email = document.getElementById('adminEmail').value;
+  const pass = document.getElementById('adminPass').value;
+  
+  if (email === 'profesor@reader.com' && pass === '123456') {
+    document.getElementById('adminLoginModal').classList.remove('show');
+    toast('Bienvenido a tu Tablero Creador');
+    // Te lleva directo a la lista de libros para crear
+    navigate('appContainer', 'List'); 
+  } else {
+    toast('Credenciales incorrectas', 'error');
   }
-});
+}
 
-
-// === LÓGICA DE DATOS Y EDITOR ===
-const DICT = { castle: { m: 'fortaleza', ipa: '/ˈkɑːsl/' }, ghost: { m: 'fantasma', ipa: '/ɡəʊst/' } };
+// === DATOS Y EDITOR ===
 let readers = [];
 let currentId = null;
 let activeChapterIdx = 0;
 let viewMode = 'edit';
 let previewMode = 'scroll'; 
-let flipbookInstance = null;
-let pendingImport = null;
 
 function uid(){ return 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function defaultReader(){ return { id:uid(), title:'', level:'B1', coverImage:null, characters:[], keywords:[], chapters:[defaultChapter(1)], status:'draft', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() }; }
@@ -796,32 +646,6 @@ function pickAudioMime() {
   if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
   return 'audio/webm';
 }
-function audioExt(mime){ return mime.includes('mp4') ? 'm4a' : 'webm'; }
-
-let _autosaveTimer = null;
-let _autosaveBusy  = false;
-function markDirty(){
-  clearTimeout(_autosaveTimer);
-  setStatus('Cambios sin guardar...', false);
-  _autosaveTimer = setTimeout(async () => {
-    if (_autosaveBusy || !currentId) return;
-    _autosaveBusy = true;
-    setStatus('Guardando...', false);
-    collectFromForm();
-    const r = getCurrent();
-    if(r) {
-      try { 
-        await saveReader(r); 
-        const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
-        setStatus('Saved', true);
-      } catch(e){ 
-        console.error(e); 
-        setStatus('Error al guardar', false);
-      }
-    }
-    _autosaveBusy = false;
-  }, 1500);
-}
 
 async function loadAll(){
   const { data, error } = await supabaseClient.from('readers').select('*').order('created_at', { ascending: false });
@@ -831,8 +655,6 @@ async function loadAll(){
     if (!r.id) r.id = row.client_id || String(row.id);
     if (!Array.isArray(r.chapters)) r.chapters = [];
     if (!Array.isArray(r.characters)) r.characters = [];
-    if (!r.keywords) r.keywords = [];
-    if (!r.level) r.level = 'B1';
     if (!r.status) r.status = 'draft';
     r.chapters.forEach(ch => { if(!Array.isArray(ch.characters)) ch.characters = []; });
     return r;
@@ -845,10 +667,6 @@ async function saveReader(r){
   const { data, error } = await supabaseClient.from('readers').upsert(row, { onConflict: 'client_id' }).select().single();
   if (error) throw error;
   return data;
-}
-async function deleteReaderDB(id){
-  const { error } = await supabaseClient.from('readers').delete().eq('client_id', id);
-  if (error) throw error;
 }
 
 function toast(msg, type){
@@ -864,353 +682,64 @@ function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;')
 function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 function getCurrent(){ return readers.find(x=>x.id===currentId); }
 
-function speak(text, btn){
-  if(!text||!String(text).trim()){ toast('No text to speak','error'); return; }
-  if(!window.speechSynthesis){ toast('Web Speech API not available','error'); return; }
-  speechSynthesis.cancel();
-  document.querySelectorAll('.btn-speak.playing').forEach(b=>b.classList.remove('playing'));
-  const u = new SpeechSynthesisUtterance(String(text).trim());
-  u.lang='en-US'; u.rate=0.9;
-  if(btn){ btn.classList.add('playing'); u.onend=()=>btn.classList.remove('playing'); }
-  speechSynthesis.speak(u);
-}
-if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
-
-document.getElementById('panelTabs').addEventListener('click', e=>{
-  const btn = e.target.closest('[data-tab]'); if(!btn) return;
-  document.querySelectorAll('#panelTabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-});
-
-document.querySelectorAll('[data-mode]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    viewMode = btn.dataset.mode;
-    document.body.classList.toggle('mode-student', viewMode === 'student');
-    document.getElementById('previewHeader').textContent = viewMode==='student' ? '👤 Student mode' : '👁 Preview (edit mode)';
-    document.getElementById('editLayout').style.gridTemplateColumns = viewMode==='student' ? '1fr' : '';
-    document.querySelector('.panel:not(.preview-panel)').style.display = viewMode==='student' ? 'none' : '';
-    updatePreview();
-  });
-});
-
 function renderList(){
   const grid = document.getElementById('readersGrid');
   if(!readers.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div style="font-size:2.5rem">📚</div><h3 style="color:var(--azul)">You do not have any Readers yet</h3><p>Create one or import a PDF/DOCX.</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No tienes libros creados</h3></div>';
     return;
   }
   grid.innerHTML = readers.map(r=>{
     const cover = r.coverImage? '<img src="'+r.coverImage+'" alt="">' : '📖';
-    const st = r.status==='published'?'published':'draft';
-    const stL = r.status==='published'?'Published':'Draft';
-    return '<div class="reader-card" data-id="'+r.id+'"><div class="reader-card-cover">'+cover+'<span class="level-badge">'+r.level+'</span></div><div class="reader-card-body"><h3>'+(r.title||'Untitled')+'</h3><p>'+r.chapters.length+' cap. · '+(r.characters||[]).length+' pers.</p><span class="meta-pill '+st+'">'+stL+'</span></div><div class="reader-card-actions"><button class="btn btn-azul btn-mini" data-edit="'+r.id+'">✏️ Edit</button><button class="btn btn-ghost btn-mini" data-dup="'+r.id+'">📋</button></div></div>';
+    return '<div class="reader-card" data-id="'+r.id+'"><div class="reader-card-cover">'+cover+'<span class="level-badge">'+r.level+'</span></div><div class="reader-card-body"><h3>'+(r.title||'Untitled')+'</h3><p>'+r.chapters.length+' capítulos</p><span class="meta-pill '+(r.status==='published'?'published':'draft')+'">'+(r.status==='published'?'Publicado':'Borrador')+'</span></div><div class="reader-card-actions"><button class="btn btn-azul btn-mini" data-edit="'+r.id+'">✏️ Edit</button></div></div>';
   }).join('');
   grid.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openEditor(b.dataset.edit); });
-  grid.querySelectorAll('[data-dup]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); duplicateReader(b.dataset.dup); });
   grid.querySelectorAll('.reader-card').forEach(c=>c.onclick=()=>openEditor(c.dataset.id));
-}
-
-function updateChecklist(){
-  const r = getCurrent(); if(!r) return;
-  const items = [
-    [!!r.title, 'Title'],
-    [r.chapters.length>0, 'At least 1 chapter'],
-    [r.chapters.some(c=>c.text&&c.text.trim()), 'Text in a chapter'],
-    [r.chapters.some(c=>(c.keywords||[]).some(k=>k.word)), 'Key words (optional)'],
-    [(r.characters||[]).some(c=>c.name), 'Characters (optional)']
-  ];
-  document.getElementById('publishCheck').innerHTML = '<strong>Publish checklist</strong><ul style="list-style:none;padding:0">'+
-    items.map(([ok,label])=>'<li class="'+(ok?'ok':'no')+'">'+(ok?'✓':'○')+' '+label+'</li>').join('')+'</ul>';
 }
 
 async function openEditor(id){
   currentId = id;
   const r = getCurrent(); if(!r) return;
   document.getElementById('fieldTitle').value = r.title||'';
-  document.getElementById('fieldLevel').value = r.level||'B1';
   document.getElementById('btnDelete').style.display = 'inline-flex';
   if(r.coverImage){ document.getElementById('coverPreview').style.display='block'; document.getElementById('coverImg').src=r.coverImage; }
   else document.getElementById('coverPreview').style.display='none';
-  renderCharacters(); renderKeywords(); activeChapterIdx=0; renderChaptersList();
-  if(r.chapters.length) loadChapterEditor(0); else document.getElementById('chapterEditor').style.display='none';
-  updateChecklist(); updatePreview(); 
-  
+  renderChaptersList();
+  if(r.chapters.length) loadChapterEditor(0); 
   navigate('appContainer', 'Editor');
-  setStatus(r.status==='published'?'Published':'Draft');
 }
 
 async function createNewReader(){
   const r = defaultReader();
   readers.unshift(r);
-  try { await saveReader(r); } catch(e){ toast('Save failed: check Supabase','error'); }
+  try { await saveReader(r); } catch(e){ toast('Error al guardar','error'); }
   openEditor(r.id);
-  toast('New Reader created');
+  toast('Nuevo libro creado');
 }
-async function duplicateReader(id){
-  const o = readers.find(x=>x.id===id); if(!o) return;
-  const c = JSON.parse(JSON.stringify(o));
-  c.id=uid(); c.title=(c.title||'Untitled')+' (copia)'; c.status='draft';
-  readers.unshift(c);
-  try { await saveReader(c); } catch(e){ toast('Duplicate failed','error'); }
-  renderList(); toast('Duplicated');
-}
-
-function collectFromForm(){
-  const r = getCurrent(); if(!r) return;
-  r.title = document.getElementById('fieldTitle').value.trim();
-  r.level = document.getElementById('fieldLevel').value;
-  r.characters = [];
-  document.querySelectorAll('#charList .char-card').forEach(card=>{
-    r.characters.push({ id:card.dataset.cid||uid(), name:card.querySelector('[data-char-name]')?.value.trim()||'', description:card.querySelector('[data-char-desc]')?.value.trim()||'', photo:card.dataset.photo||null });
-  });
-  if(r.chapters[activeChapterIdx]){
-    const ch = r.chapters[activeChapterIdx];
-    ch.title = document.getElementById('chTitle').value.trim();
-    ch.text = document.getElementById('chText').value;
-    ch.characters = [];
-    document.querySelectorAll('#chapterChars .chapter-char-chip.assigned').forEach(chip=>{
-      if(chip.dataset.cid) ch.characters.push(chip.dataset.cid);
-    });
-    const prevKw = ch.keywords || [];
-    ch.keywords = [];
-    document.querySelectorAll('#kwList .kw-row').forEach((row, i) => {
-      const prev = prevKw[i] || {};
-      ch.keywords.push({ word: row.querySelector('[data-kw-word]')?.value.trim() || '', meaning: row.querySelector('[data-kw-meaning]')?.value.trim() || '', ipa: row.querySelector('[data-kw-ipa]')?.value.trim() || '', audio: prev.audio || null });
-    });
-    const cards = document.querySelectorAll('#questionsList .mcq-card');
-    if(cards.length){
-      ch.questions = [];
-      cards.forEach(card=>{
-        const q = card.querySelector('[data-mcq-q]')?.value.trim()||'';
-        const options = [0,1,2].map(oi=>card.querySelector('[data-mcq-opt="'+oi+'"]')?.value.trim()||'');
-        const checked = card.querySelector('input[data-mcq-correct]:checked');
-        ch.questions.push({ q, options, correct: checked?parseInt(checked.value,10):0 });
-      });
-    }
-  }
-  updateChecklist();
-}
-
-async function saveProject(){
-  collectFromForm();
-  const r = getCurrent(); if(!r) return;
-  if(r.status!=='published') r.status='draft';
-  try {
-    await saveReader(r);
-    const i = readers.findIndex(x=>x.id===r.id); if(i>=0) readers[i]=r;
-    setStatus('Saved', true); toast('Project saved');
-    renderCharacters(); renderKeywords(); renderChaptersList(); updatePreview();
-  } catch(e){ toast('Save failed','error'); }
-}
-async function publishReader(){
-  collectFromForm();
-  const r = getCurrent(); if(!r) return;
-  if(!r.title){ toast('Title required','error'); return; }
-  if(!r.chapters.some(c=>c.text&&c.text.trim())){ toast('Chapter content required','error'); return; }
-  r.status='published';
-  try { await saveReader(r); setStatus('Published',true); toast('Published!'); updatePreview(); }
-  catch(e){ toast('Publish failed','error'); }
-}
-async function deleteReader(){
-  if(!confirm('Delete this Reader?')) return;
-  try { await deleteReaderDB(currentId); } catch(e){ toast('Delete failed','error'); return; }
-  readers = readers.filter(x=>x.id!==currentId);
-  currentId=null; navigate('appContainer', 'List'); renderList(); toast('Deleted');
-}
-
-function renderCharacters(){
-  const r=getCurrent(); const list=document.getElementById('charList');
-  if(!r||!r.characters.length){ list.innerHTML='<p class="hint">No characters yet.</p>'; renderChapterChars(); return; }
-  list.innerHTML = r.characters.map((c,i)=>'<div class="char-card" data-cid="'+c.id+'" data-photo="'+(c.photo||'')+'">'+
-    '<div class="char-photo" data-char-photo="'+i+'">'+(c.photo?'<img src="'+c.photo+'" alt="">':'📷')+'<input type="file" accept="image/*"></div>'+
-    '<div class="char-fields"><div class="char-name-row"><input type="text" data-char-name placeholder="Name" value="'+(c.name||'').replace(/"/g,'&quot;')+'">'+
-    '<button type="button" class="btn-speak" data-speak-char="'+i+'">🔊</button></div>'+
-    '<textarea data-char-desc placeholder="Desc">'+(c.description||'')+'</textarea></div>'+
-    '<button type="button" class="btn-icon" data-del-char="'+i+'">🗑</button></div>').join('');
-  list.querySelectorAll('[data-char-photo]').forEach(zone=>{
-    const input=zone.querySelector('input');
-    zone.onclick=e=>{ if(e.target.tagName!=='INPUT') input.click(); };
-    input.onchange=async()=>{ const f=input.files[0]; if(!f) return; const b64=await fileToBase64(f); const idx=+zone.dataset.charPhoto; r.characters[idx].photo=b64; zone.closest('.char-card').dataset.photo=b64; zone.innerHTML='<img src="'+b64+'" alt=""><input type="file" accept="image/*">'; const ni=zone.querySelector('input'); zone.onclick=e=>{if(e.target.tagName!=='INPUT')ni.click()}; ni.onchange=input.onchange; updatePreview(); renderChapterChars(); };
-  });
-  list.querySelectorAll('[data-del-char]').forEach(btn=>btn.onclick=()=>{ r.characters.splice(+btn.dataset.delChar,1); renderCharacters(); updatePreview(); markDirty(); });
-  list.querySelectorAll('[data-speak-char]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); speak(list.querySelectorAll('[data-char-name]')[+btn.dataset.speakChar]?.value, btn); });
-  list.querySelectorAll('[data-char-name],[data-char-desc]').forEach(el=>el.oninput=()=>{ collectFromForm(); markDirty(); renderChapterChars(); updatePreview(); });
-  renderChapterChars();
-}
-function addCharacter(){ collectFromForm(); getCurrent().characters.push(defaultChar()); renderCharacters(); updatePreview(); markDirty(); }
-
-function renderChapterChars(){
-  const r = getCurrent(); const wrap = document.getElementById('chapterChars'); if(!wrap) return;
-  if(!r || !r.chapters[activeChapterIdx]){ wrap.innerHTML = '<p class="hint">Selecciona un capítulo.</p>'; return; }
-  const ch = r.chapters[activeChapterIdx];
-  if(!r.characters.length){ wrap.innerHTML = '<p class="hint">No hay personajes.</p>'; return; }
-  wrap.innerHTML = r.characters.map(c=>{
-    const assigned = ch.characters.includes(c.id);
-    return '<div class="chapter-char-chip '+(assigned?'assigned':'')+'" data-cid="'+c.id+'"><span class="avatar">'+(c.photo?'<img src="'+c.photo+'">':'👤')+'</span>'+(escapeHtml(c.name)||'Sin nombre')+'</div>';
-  }).join('');
-  wrap.querySelectorAll('.chapter-char-chip').forEach(chip=>{
-    chip.onclick = () => { chip.classList.toggle('assigned'); collectFromForm(); markDirty(); updatePreview(); };
-  });
-}
-
-function renderKeywords(){
-  const r = getCurrent(); const list = document.getElementById('kwList'); if (!list) return;
-  if (!r || !r.chapters[activeChapterIdx]) { list.innerHTML = ''; return; }
-  const ch = r.chapters[activeChapterIdx];
-  if (!ch.keywords) ch.keywords = [];
-  if (!ch.keywords.length) { list.innerHTML = '<p class="hint">No key words.</p>'; return; }
-  list.innerHTML = ch.keywords.map((kw, i) => {
-    return '<div class="kw-row" data-kw-idx="'+i+'"><div class="kw-word"><input type="text" data-kw-word placeholder="Word" value="'+(kw.word||'').replace(/"/g,'&quot;')+'"><button type="button" class="btn-icon" data-del-kw="'+i+'">🗑</button></div>'+
-      '<div class="kw-meta"><div><label>Meaning</label><input type="text" data-kw-meaning value="'+(kw.meaning||'').replace(/"/g,'&quot;')+'"></div><div><label>IPA</label><input type="text" data-kw-ipa value="'+(kw.ipa||'').replace(/"/g,'&quot;')+'"></div></div>'+
-      '<div class="kw-actions"><button type="button" class="btn btn-azul btn-xs" data-gen-mean="'+i+'">📖 Meaning</button><button type="button" class="btn btn-talento btn-xs" data-gen-ipa="'+i+'">🔤 IPA</button>'+
-      '<label class="btn btn-ghost btn-xs" style="cursor:pointer">📁 Upload<input type="file" accept="audio/*" data-kw-file="'+i+'" style="display:none"></label>'+
-      (kw.audio ? '<audio controls src="'+kw.audio+'" style="height:28px;max-width:140px"></audio>' : '')+
-      '</div></div>';
-  }).join('');
-  list.querySelectorAll('[data-del-kw]').forEach(btn => { btn.onclick = () => { collectFromForm(); getCurrent().chapters[activeChapterIdx].keywords.splice(+btn.dataset.delKw, 1); renderKeywords(); updatePreview(); markDirty(); }; });
-  list.querySelectorAll('[data-kw-file]').forEach(inp => {
-    inp.onchange = async () => {
-      const f = inp.files[0]; if (!f) return; const idx = +inp.dataset.kwFile; const b64 = await fileToBase64(f);
-      collectFromForm(); const ch = getCurrent().chapters[activeChapterIdx]; if (!ch.keywords[idx]) return;
-      ch.keywords[idx].audio = b64; renderKeywords(); updatePreview(); markDirty();
-    };
-  });
-  list.querySelectorAll('input[type=text]').forEach(inp => { inp.oninput = () => { collectFromForm(); markDirty(); updatePreview(); }; });
-}
-function addKeyword(){ collectFromForm(); const r = getCurrent(); if (!r || !r.chapters[activeChapterIdx]) return; if (!r.chapters[activeChapterIdx].keywords) r.chapters[activeChapterIdx].keywords = []; r.chapters[activeChapterIdx].keywords.push({ word:'', meaning:'', ipa:'', audio:null }); renderKeywords(); updatePreview(); markDirty(); }
 
 function renderChaptersList(){
   const r=getCurrent(); const list=document.getElementById('chaptersList');
-  if(!r||!r.chapters.length){ list.innerHTML='<p class="hint">No chapters.</p>'; return; }
-  list.innerHTML = r.chapters.map((ch,i)=>'<div class="chapter-item '+(i===activeChapterIdx?'active':'')+'" data-idx="'+i+'"><span class="num">'+(i+1)+'</span><span class="title">'+(ch.title||'Untitled')+'</span><button type="button" class="btn-icon" data-del-ch="'+i+'">🗑</button></div>').join('');
+  if(!r||!r.chapters.length){ list.innerHTML=''; return; }
+  list.innerHTML = r.chapters.map((ch,i)=>'<div class="chapter-item '+(i===activeChapterIdx?'active':'')+'" data-idx="'+i+'"><span class="num">'+(i+1)+'</span><span class="title">'+(ch.title||'Untitled')+'</span></div>').join('');
   list.querySelectorAll('.chapter-item').forEach(item=>item.onclick=e=>{
-    if(e.target.closest('[data-del-ch]')) return;
-    collectFromForm(); activeChapterIdx=+item.dataset.idx; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview();
-  });
-  list.querySelectorAll('[data-del-ch]').forEach(btn=>btn.onclick=e=>{
-    e.stopPropagation(); if(!confirm('Delete?')) return;
-    r.chapters.splice(+btn.dataset.delCh,1); activeChapterIdx=Math.max(0,r.chapters.length-1);
-    if(r.chapters.length) loadChapterEditor(activeChapterIdx); else document.getElementById('chapterEditor').style.display='none';
-    renderChaptersList(); updatePreview(); markDirty();
+    activeChapterIdx=+item.dataset.idx; loadChapterEditor(activeChapterIdx); renderChaptersList();
   });
 }
+
 function loadChapterEditor(idx){
   const r=getCurrent(); if(!r||!r.chapters[idx]) return;
   activeChapterIdx=idx; const ch=r.chapters[idx];
   document.getElementById('chapterEditor').style.display='block';
   document.getElementById('chTitle').value=ch.title||''; document.getElementById('chText').value=ch.text||'';
-  if(ch.image){ document.getElementById('chImgPreview').style.display='block'; document.getElementById('chImg').src=ch.image; } else document.getElementById('chImgPreview').style.display='none';
-  renderChapterChars(); renderKeywords(); renderQuestionsEditor(ch);
-}
-function renderQuestionsEditor(ch){
-  const qList=document.getElementById('questionsList'); qList.innerHTML='';
-  (ch.questions||[]).forEach((item,i)=>{
-    const card=document.createElement('div'); card.className='mcq-card';
-    const opts=item.options||['','','']; const correct=+item.correct||0;
-    card.innerHTML='<div style="display:flex;justify-content:space-between;"><strong>Q'+(i+1)+'</strong><button type="button" class="btn-icon" data-del-q="'+i+'">🗑</button></div>'+
-      '<input class="mcq-q" type="text" data-mcq-q value="'+(item.q||'').replace(/"/g,'&quot;')+'" placeholder="Question">'+
-      [0,1,2].map(oi=>'<div class="mcq-opt"><input type="radio" name="mcq-c-'+i+'" data-mcq-correct value="'+oi+'" '+(correct===oi?'checked':'')+'><input type="text" data-mcq-opt="'+oi+'" value="'+(opts[oi]||'').replace(/"/g,'&quot;')+'"></div>').join('');
-    qList.appendChild(card);
-  });
-  qList.querySelectorAll('[data-del-q]').forEach(btn=>btn.onclick=()=>{ collectFromForm(); getCurrent().chapters[activeChapterIdx].questions.splice(+btn.dataset.delQ,1); renderQuestionsEditor(getCurrent().chapters[activeChapterIdx]); updatePreview(); markDirty(); });
-  qList.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{collectFromForm();markDirty();updatePreview()}; inp.onchange=()=>{collectFromForm();markDirty();updatePreview()}; });
-}
-function addChapter(){ collectFromForm(); const r=getCurrent(); r.chapters.push(defaultChapter(r.chapters.length+1)); activeChapterIdx=r.chapters.length-1; loadChapterEditor(activeChapterIdx); renderChaptersList(); updatePreview(); markDirty(); }
-
-function setupImg(zoneId,inputId,previewId,imgId,removeId,onSet){
-  const zone=document.getElementById(zoneId), input=document.getElementById(inputId), preview=document.getElementById(previewId), img=document.getElementById(imgId);
-  zone.onclick=()=>input.click();
-  zone.ondragover=e=>{e.preventDefault();zone.classList.add('dragover')}; zone.ondragleave=()=>zone.classList.remove('dragover');
-  zone.ondrop=async e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; markDirty(); }};
-  input.onchange=async()=>{ const f=input.files[0]; if(f){ const b=await fileToBase64(f); onSet(b); img.src=b; preview.style.display='block'; markDirty(); }};
-  document.getElementById(removeId).onclick=e=>{ e.stopPropagation(); onSet(null); img.src=''; preview.style.display='none'; input.value=''; markDirty(); };
-}
-
-function updatePreview(){
-  collectFromForm();
-  const r=getCurrent();
-  const scrollArea = document.getElementById('previewArea');
-  const flipWrap = document.getElementById('flipbookWrap');
-  if(!r){ scrollArea.innerHTML=''; return; }
-  if(previewMode === 'flipbook'){ scrollArea.style.display='none'; flipWrap.style.display='flex'; renderFlipbook(r); return; }
-  scrollArea.style.display='block'; flipWrap.style.display='none';
-  
-  let html='';
-  if(r.coverImage) html+='<div class="book-cover-preview has-img"><img src="'+r.coverImage+'" alt=""><div class="cover-overlay"><h2>'+escapeHtml(r.title||'Untitled')+'</h2></div></div>';
-  else html+='<div class="book-cover-preview"><h2>'+escapeHtml(r.title||'Untitled')+'</h2></div>';
-  
-  r.chapters.forEach((ch,i)=>{
-    html+='<div class="chapter-preview"><h3>'+escapeHtml(ch.title||('Chapter '+(i+1)))+'</h3>';
-    if(ch.image) html+='<img class="chapter-img" src="'+ch.image+'" alt="">';
-    if(ch.audio) html+='<div class="audio-player"><audio controls src="'+ch.audio+'"></audio></div>';
-    html+='<div class="chapter-text">'+(escapeHtml(ch.text)||'<em style="color:#9ca3af">(No text yet)</em>')+'</div>';
-    html+='</div>';
-  });
-  scrollArea.innerHTML=html;
-}
-
-document.getElementById('btnTogglePreviewMode').onclick = () => {
-  previewMode = previewMode === 'scroll' ? 'flipbook' : 'scroll';
-  document.getElementById('btnTogglePreviewMode').textContent = previewMode === 'scroll' ? '📖 Libro' : '📜 Scroll';
-  updatePreview();
-};
-
-document.getElementById('btnRecord').onclick=async()=>{
-  if(!navigator.mediaDevices?.getUserMedia){ toast('Microphone not available','error'); return; }
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true}); const recChunks=[];
-    const mime = pickAudioMime();
-    const mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
-    mediaRecorder.ondataavailable=e=>{ if(e.data.size) recChunks.push(e.data); };
-    mediaRecorder.onstop=async()=>{
-      stream.getTracks().forEach(t=>t.stop());
-      const b64 = await fileToBase64(new Blob(recChunks,{type:mime}));
-      const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return;
-      r.chapters[activeChapterIdx].audio=b64; updatePreview(); markDirty();
-    };
-    mediaRecorder.start();
-  }catch(e){ toast('Error','error'); }
-};
-
-function doLogin() {
-  const email = document.getElementById('loginEmail').value;
-  const pass = document.getElementById('loginPass').value;
-  
-  if (email === 'profesor@reader.com' && pass === '123456') {
-    toast('Bienvenido Profesor');
-    navigate('viewDashboard');
-  } else {
-    toast('Credenciales incorrectas. Usa profesor@reader.com / 123456', 'error');
-  }
 }
 
 document.getElementById('btnNewReader').onclick=createNewReader;
-document.getElementById('btnSave').onclick=saveProject;
-document.getElementById('btnPublish').onclick=publishReader;
-document.getElementById('btnDelete').onclick=deleteReader;
-document.getElementById('btnAddChar').onclick=addCharacter;
-document.getElementById('btnAddKeyword').onclick=addKeyword;
-document.getElementById('btnAddChapter').onclick=addChapter;
-document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const r=getCurrent(); if(!r?.chapters[activeChapterIdx]) return; r.chapters[activeChapterIdx].questions.push({q:'',options:['','',''],correct:0}); renderQuestionsEditor(r.chapters[activeChapterIdx]); updatePreview(); markDirty(); };
+document.getElementById('btnAddChapter').onclick=()=>{ const r=getCurrent(); r.chapters.push(defaultChapter(r.chapters.length+1)); renderChaptersList(); loadChapterEditor(r.chapters.length-1); };
+document.getElementById('btnSave').onclick=async()=>{ const r=getCurrent(); r.title = document.getElementById('fieldTitle').value; await saveReader(r); toast('Guardado'); };
 
-['fieldTitle','fieldLevel','chTitle','chText'].forEach(id=>{
-  document.getElementById(id).oninput=()=>{ collectFromForm(); markDirty(); if(id==='chTitle'||id==='fieldTitle') renderChaptersList(); updatePreview(); };
-});
-
-setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover', b64=>{ const r=getCurrent(); if(r){ r.coverImage=b64; updatePreview(); }});
-setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
-
-// INICIALIZACIÓN FINAL
+// Inicialización
 initCarousel(defaultSlides);
 loadAll().then(()=>{
   renderList();
-}).catch(e=>{
-  console.error(e);
-  toast('Error al conectar con Supabase','error');
-});
+}).catch(e=>console.error(e));
 </script>
 </body></html>
