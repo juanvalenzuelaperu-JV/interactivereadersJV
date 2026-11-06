@@ -81,7 +81,7 @@ button,input,select,textarea{font-family:inherit}
 .next-read-bg { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
 .my-books-bg { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
 
-/* === APP PRINCIPAL (Topbar, Lista, Editor) === */
+/* === APP PRINCIPAL === */
 #appContainer { display: none; }
 .topbar{background:var(--blanco);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.04)}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -269,7 +269,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
   <div class="welcome-overlay">
     <h1>Readers</h1>
     <p>Descubre un mundo de historias interactivas</p>
-    <button class="btn-large btn-azul" onclick="goToLogin()">Comenzar →</button>
+    <button class="btn-large btn-azul" onclick="navigate('viewLogin')">Comenzar →</button>
   </div>
 </div>
 
@@ -300,7 +300,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
       <p>Continúa donde lo dejaste o explora nuevas historias.</p>
     </div>
     
-    <div class="dash-card my-books-bg" onclick="openReaderPanel()">
+    <div class="dash-card my-books-bg" onclick="navigate('appContainer', 'List')">
       <div class="book-icon-img">📚</div>
       <h2>Mis Libros</h2>
       <p>Administra, crea y edita los libros interactivos.</p>
@@ -312,16 +312,16 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 <div id="appContainer">
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="logo-text" onclick="goToDashboard()">Readers<small>Interactive Book Builder</small></div>
+      <div class="logo-text" onclick="navigate('viewDashboard')">Readers<small>Interactive Book Builder</small></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready</span></span>
-        <button class="btn btn-ghost btn-mini" id="btnBackToDashboard" type="button">← Dashboard</button>
-        <button class="btn btn-ghost btn-mini" id="btnBackToList" style="display:none" type="button">← My Readers</button>
+        <button class="btn btn-ghost btn-mini" onclick="navigate('viewDashboard')" type="button">← Dashboard</button>
+        <button class="btn btn-ghost btn-mini" id="btnBackToList" style="display:none" onclick="navigate('appContainer', 'List')" type="button">← My Readers</button>
       </div>
     </div>
   </header>
   <main class="container">
-    <div class="view active" id="viewList">
+    <div class="view" id="viewList">
       <div class="page-header">
         <div><h1>📚 <span>Readers</span></h1><p>Create interactive books. Projects are stored in Supabase.</p></div>
         <button class="btn btn-talento" id="btnNewReader" type="button">＋ New Reader</button>
@@ -331,7 +331,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
     <div class="view" id="viewEditor">
       <div class="editor-toolbar">
-        <button class="btn btn-ghost btn-mini" id="btnBack" type="button">← Back</button>
+        <button class="btn btn-ghost btn-mini" onclick="navigate('appContainer', 'List')" type="button">← Back</button>
         <button class="btn btn-azul btn-mini" id="btnSave" type="button">💾 Save project</button>
         <button class="btn btn-verde btn-mini" id="btnPublish" type="button">🚀 Publish</button>
         <button class="btn btn-rojo btn-mini" id="btnDelete" type="button" style="display:none">🗑 Delete</button>
@@ -365,7 +365,7 @@ body.mode-student .kw-preview-item { font-size:1rem; }
             </div>
             <div class="tab-pane" id="tab-personajes">
               <div class="section-title">👥 Characters (book level) <button class="btn btn-talento btn-xs" id="btnAddChar" type="button">＋ Nuevo</button></div>
-              <p class="hint">Los personajes se asignan a capítulos desde el editor de cada capítulo. 🔊 Pronounce the name (Web Speech API).</p>
+              <p class="hint">Los personajes se asignan a capítulos desde el editor de cada capítulo.</p>
               <div class="char-list" id="charList"></div>
             </div>
             <div class="tab-pane" id="tab-capitulos">
@@ -455,94 +455,85 @@ const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ======================
 
-// === SISTEMA DE VISTAS Y NAVEGACIÓN (HISTORY API) ===
-const views = ['viewWelcome', 'viewLogin', 'viewDashboard', 'appContainer'];
+// === SISTEMA DE NAVEGACIÓN (ROUTER) ===
+let isPopping = false;
 
-function navigate(viewId, push = true) {
-  views.forEach(v => {
-    const el = document.getElementById(v);
-    if (v === viewId) {
-      if (v === 'appContainer') {
-        el.style.display = 'block';
-        document.body.style.overflow = 'auto';
-      } else {
-        el.classList.add('active');
-        if (v === 'viewDashboard') document.body.style.overflow = 'auto';
-        else document.body.style.overflow = 'hidden';
-      }
-    } else {
-      if (v === 'appContainer') el.style.display = 'none';
-      else el.classList.remove('active');
+function navigate(viewId, subview = null, push = true) {
+  // 1. Ocultar todas las vistas principales
+  document.querySelectorAll('.fullscreen-view').forEach(el => el.classList.remove('active'));
+  document.getElementById('appContainer').style.display = 'none';
+  document.body.style.overflow = 'auto';
+
+  // 2. Mostrar la vista solicitada
+  if (viewId === 'appContainer') {
+    document.getElementById('appContainer').style.display = 'block';
+    if (subview === 'List') {
+      document.getElementById('viewList').classList.add('active');
+      document.getElementById('viewEditor').classList.remove('active');
+      document.getElementById('btnBackToList').style.display = 'none';
+    } else if (subview === 'Editor') {
+      document.getElementById('viewList').classList.remove('active');
+      document.getElementById('viewEditor').classList.add('active');
+      document.getElementById('btnBackToList').style.display = 'inline-flex';
     }
-  });
+  } else {
+    const target = document.getElementById(viewId);
+    if (target) target.classList.add('active');
+  }
 
   if (viewId === 'viewDashboard') window.scrollTo(0,0);
 
-  // Guardar en el historial del navegador
-  if (push) {
-    history.pushState({ view: viewId }, '', '#' + viewId);
+  // 3. Guardar en el historial
+  if (push && !isPopping) {
+    const hash = subview ? `#${viewId}_${subview}` : `#${viewId}`;
+    history.pushState({ viewId, subview }, '', hash);
   }
 }
 
-// Escuchar el botón "Atrás" del navegador
+// Escuchar los botones "Atrás/Adelante" del navegador
 window.addEventListener('popstate', (e) => {
-  if (e.state && e.state.view) {
-    navigate(e.state.view, false);
+  isPopping = true;
+  if (e.state && e.state.viewId) {
+    navigate(e.state.viewId, e.state.subview, false);
   } else {
-    navigate('viewWelcome', false);
+    navigate('viewWelcome', null, false);
   }
+  isPopping = false;
 });
 
-// Función para botones de "Volver"
 function goBack() {
   history.back();
 }
 
-// Inicializar el estado del historial al cargar
-if (window.location.hash) {
-  const initialView = window.location.hash.replace('#', '');
-  if (views.includes(initialView)) {
-    navigate(initialView, false);
-  } else {
-    history.replaceState({ view: 'viewWelcome' }, '', '#viewWelcome');
-  }
+// Inicializar el historial al cargar por primera vez
+if (!history.state) {
+  history.replaceState({ viewId: 'viewWelcome', subview: null }, '', '#viewWelcome');
 } else {
-  history.replaceState({ view: 'viewWelcome' }, '', '#viewWelcome');
+  // Si recargamos la página estando en una vista, recuperar el estado
+  navigate(history.state.viewId, history.state.subview, false);
 }
 
-function goToLogin() { navigate('viewLogin'); }
-function goToDashboard() { navigate('viewDashboard'); }
-function openReaderPanel() { navigate('appContainer'); showView('List'); }
-// =========================================
-
-// === CARRUSEL DE BIENVENIDA ===
+// === CARRUSEL ===
 const slides = [
   'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000&auto=format&fit=crop'
 ];
 let currentSlide = 0;
-
 function initCarousel() {
   document.getElementById('slide1').style.backgroundImage = `url('${slides[0]}')`;
   document.getElementById('slide2').style.backgroundImage = `url('${slides[1]}')`;
   document.getElementById('slide3').style.backgroundImage = `url('${slides[2]}')`;
-  
   const bgElements = [document.getElementById('slide1'), document.getElementById('slide2'), document.getElementById('slide3')];
-  
   setInterval(() => {
     bgElements[currentSlide].classList.remove('active');
     currentSlide = (currentSlide + 1) % slides.length;
     bgElements[currentSlide].classList.add('active');
   }, 4000);
 }
-// ==================================
 
-const DICT = {
-  castle:  { m: 'a large strong building where a king or queen lives', ipa: '/ˈkɑːsl/' },
-  ghost:   { m: 'the spirit of a dead person', ipa: '/ɡəʊst/' }
-};
-
+// === LÓGICA DE DATOS Y EDITOR ===
+const DICT = { castle: { m: 'fortaleza', ipa: '/ˈkɑːsl/' }, ghost: { m: 'fantasma', ipa: '/ɡəʊst/' } };
 let readers = [];
 let currentId = null;
 let activeChapterIdx = 0;
@@ -626,11 +617,6 @@ function setStatus(text, saved){
   document.getElementById('statusText').textContent = text;
   document.getElementById('statusDot').className = 'status-dot'+(saved?' saved':'');
 }
-function showView(name){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view'+name).classList.add('active');
-  document.getElementById('btnBackToList').style.display = name==='Editor'?'inline-flex':'none';
-}
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>'); }
 function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 function getCurrent(){ return readers.find(x=>x.id===currentId); }
@@ -708,7 +694,10 @@ async function openEditor(id){
   else document.getElementById('coverPreview').style.display='none';
   renderCharacters(); renderKeywords(); activeChapterIdx=0; renderChaptersList();
   if(r.chapters.length) loadChapterEditor(0); else document.getElementById('chapterEditor').style.display='none';
-  updateChecklist(); updatePreview(); showView('Editor');
+  updateChecklist(); updatePreview(); 
+  
+  // Navegar al Editor
+  navigate('appContainer', 'Editor');
   setStatus(r.status==='published'?'Published':'Draft');
 }
 
@@ -788,7 +777,7 @@ async function deleteReader(){
   if(!confirm('Delete this Reader?')) return;
   try { await deleteReaderDB(currentId); } catch(e){ toast('Delete failed','error'); return; }
   readers = readers.filter(x=>x.id!==currentId);
-  currentId=null; showView('List'); renderList(); toast('Deleted');
+  currentId=null; navigate('appContainer', 'List'); renderList(); toast('Deleted');
 }
 
 function renderCharacters(){
@@ -945,10 +934,19 @@ document.getElementById('btnRecord').onclick=async()=>{
   }catch(e){ toast('Error','error'); }
 };
 
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  
+  if (email === 'profesor@reader.com' && pass === '123456') {
+    toast('Bienvenido Profesor');
+    navigate('viewDashboard');
+  } else {
+    toast('Credenciales incorrectas. Usa profesor@reader.com / 123456', 'error');
+  }
+}
+
 document.getElementById('btnNewReader').onclick=createNewReader;
-document.getElementById('btnBack').onclick=async()=>{ collectFromForm(); await saveProject(); showView('List'); renderList(); };
-document.getElementById('btnBackToList').onclick=async()=>{ collectFromForm(); await saveProject(); showView('List'); renderList(); };
-document.getElementById('btnBackToDashboard').onclick=()=>{ goToDashboard(); };
 document.getElementById('btnSave').onclick=saveProject;
 document.getElementById('btnPublish').onclick=publishReader;
 document.getElementById('btnDelete').onclick=deleteReader;
@@ -964,19 +962,6 @@ document.getElementById('btnAddQuestion').onclick=()=>{ collectFromForm(); const
 setupImg('coverUploadZone','coverInput','coverPreview','coverImg','removeCover', b64=>{ const r=getCurrent(); if(r){ r.coverImage=b64; updatePreview(); }});
 setupImg('chImgZone','chImgInput','chImgPreview','chImg','removeChImg', b64=>{ const r=getCurrent(); if(r?.chapters[activeChapterIdx]){ r.chapters[activeChapterIdx].image=b64; updatePreview(); }});
 
-function doLogin() {
-  const email = document.getElementById('loginEmail').value;
-  const pass = document.getElementById('loginPass').value;
-  
-  if (email === 'profesor@reader.com' && pass === '123456') {
-    toast('Bienvenido Profesor');
-    navigate('viewDashboard');
-  } else {
-    toast('Credenciales incorrectas. Usa profesor@reader.com / 123456', 'error');
-  }
-}
-
-// INICIALIZACIÓN FINAL
 initCarousel();
 loadAll().then(()=>{
   renderList();
