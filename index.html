@@ -20,30 +20,6 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fondo);color:var(--texto);line-height:1.55;min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font-family:inherit}
 
-/* === BOTONES DE NAVEGACIÓN ATRÁS === */
-.btn-back-nav {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.4);
-  padding: 8px 16px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-  z-index: 10;
-  backdrop-filter: blur(5px);
-}
-.btn-back-nav:hover { background: rgba(255,255,255,0.4); }
-.btn-back-dark {
-  background: #fff;
-  color: var(--texto);
-  border: 1px solid var(--borde);
-  box-shadow: var(--sombra);
-}
-.btn-back-dark:hover { background: #f1f5f9; }
 
 /* === VISTAS FULLSCREEN (Bienvenida, Login, Dashboard) === */
 .fullscreen-view { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; }
@@ -275,7 +251,6 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
 <!-- 2. PANTALLA DE LOGIN -->
 <div class="fullscreen-view" id="viewLogin">
-  <button class="btn-back-nav btn-back-dark" onclick="goBack()">← Volver</button>
   <div class="login-box">
     <h2>Acceso Docente</h2>
     <p class="hint" style="margin-bottom:20px">Ingresa tus credenciales para administrar los libros.</p>
@@ -288,7 +263,6 @@ body.mode-student .kw-preview-item { font-size:1rem; }
 
 <!-- 3. DASHBOARD (Dos pestañas) -->
 <div class="fullscreen-view" id="viewDashboard">
-  <button class="btn-back-nav btn-back-dark" onclick="goBack()">← Cerrar Sesión</button>
   <div class="dashboard-header">
     <h1>¡Hola, Profesor!</h1>
     <p>¿Qué te gustaría hacer hoy?</p>
