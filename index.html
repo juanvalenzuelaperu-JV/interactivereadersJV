@@ -290,6 +290,63 @@ body.mode-student .kw-preview-item { font-size:1rem; }
   .welcome-logo { order: -1; align-self: flex-end; } /* Botón arriba a la derecha */
   .search-container { max-width: 100%; }
 }
+  /* Estilos para la caja de acceso */
+.right-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.access-box {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  padding: 5px 15px;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+.access-box.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.access-box input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  width: 150px;
+}
+.access-box input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+.access-box button {
+  background: var(--azul-medio);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 15px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: 0.2s;
+}
+.access-box button:hover {
+  background: var(--azul);
+}
+
+/* Ajuste responsive para celular */
+@media(max-width: 768px) {
+  .access-box { flex-direction: row; padding: 5px 10px; }
+  .access-box input { width: 100px; }
+}
 </style>
 </head>
 <body>
@@ -310,10 +367,16 @@ body.mode-student .kw-preview-item { font-size:1rem; }
       <div id="autocompleteList" class="autocomplete-items"></div>
     </div>
     
-    <div class="welcome-logo" onclick="navigate('viewLogin')">Readers</div>
+    <!-- Nuevo bloque del lado derecho -->
+    <div class="right-controls">
+      <div id="accessBox" class="access-box">
+        <input type="text" id="accessCode" placeholder="Código de acceso...">
+        <button onclick="checkAccessCode()">Entrar</button>
+        <a href="#" onclick="event.preventDefault(); navigate('viewLogin')" style="color:#fff; font-size:0.7rem; margin-left:10px; text-decoration:none; opacity:0.6;">Profesor</a>
+      </div>
+      <div class="welcome-logo" onclick="toggleAccessBox()">Readers</div>
+    </div>
   </div>
-
-</div>
 
 <!-- 2. PANTALLA DE LOGIN -->
 <div class="fullscreen-view" id="viewLogin">
@@ -629,6 +692,81 @@ function simulateSearch() {
   }
 }
 
+  // === LÓGICA DE ACCESO DEL ALUMNO ===
+function toggleAccessBox() {
+  const box = document.getElementById('accessBox');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) {
+    document.getElementById('accessCode').focus();
+  }
+}
+
+function checkAccessCode() {
+  const code = document.getElementById('accessCode').value.trim();
+  
+  // CÓDIGO DE PRUEBA PARA EL ALUMNO
+  if (code === '1234' || code.toLowerCase() === 'magia') {
+    // Buscar el último libro publicado por el administrador
+    const publishedBooks = readers.filter(r => r.status === 'published');
+    
+    if (publishedBooks.length === 0) {
+      toast('Aún no hay libros publicados', 'error');
+      return;
+    }
+    
+    // Como los readers se cargan ordenados por fecha descendente, el primero es el último
+    const lastBook = publishedBooks[0]; 
+    openStudentReader(lastBook);
+    
+  } else {
+    toast('Código incorrecto. Intenta con: 1234', 'error');
+  }
+}
+
+// Función para mostrar el libro al alumno
+function openStudentReader(book) {
+  // Cerramos la cajita de acceso
+  document.getElementById('accessBox').classList.remove('show');
+  document.getElementById('accessCode').value = '';
+
+  // Creamos un modal gigante a pantalla completa para simular la portada del libro
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay show';
+  overlay.id = 'studentModal';
+  overlay.style.background = 'rgba(0,0,0,0.9)'; // Fondo más oscuro para inmersión
+  
+  overlay.innerHTML = `
+    <div style="text-align: center; color: #fff; animation: fadeIn 0.5s ease-out; width: 100%; max-width: 500px; padding: 20px;">
+      <p style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; color: var(--acento); margin-bottom: 20px;">Tu próxima lectura</p>
+      
+      ${book.coverImage 
+        ? `<img src="${book.coverImage}" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-bottom: 30px;">` 
+        : `<div style="width: 100%; height: 300px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 5rem; margin-bottom: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">📖</div>`
+      }
+      
+      <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 10px;">${book.title}</h1>
+      <p style="color: #94a3b8; margin-bottom: 40px;">Nivel ${book.level} · ${book.chapters.length} capítulos</p>
+      
+      <button class="btn btn-azul" style="width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 50px;" onclick="startReading('${book.id}')">
+        Comenzar a leer 📖
+      </button>
+      
+      <button class="btn btn-ghost" style="width: 100%; margin-top: 15px; color: #94a3b8; border-color: #475569;" onclick="document.getElementById('studentModal').remove()">
+        Volver al inicio
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+// Función que se ejecuta cuando el alumno hace clic en "Comenzar a leer"
+function startReading(bookId) {
+  document.getElementById('studentModal').remove();
+  // Aquí conectas con el visor de lectura (el "Modo Estudiante" que ya tienes)
+  alert('Aquí se abrirá el libro para leerlo (Modo Alumno).');
+  // Por ejemplo, podrías hacer: openReader(bookId) y ocultar los menús de admin.
+}
 // Permitir buscar con "Enter"
 searchInput.addEventListener('keypress', function (e) {
   if (e.key === 'Enter') {
