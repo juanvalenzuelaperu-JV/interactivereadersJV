@@ -210,7 +210,17 @@ button,input,select,textarea{font-family:inherit}
 .import-box{border:2px dashed var(--talento);border-radius:14px;padding:14px;background:linear-gradient(135deg,#eef2ff,#faf5ff);margin-bottom:12px}
 .import-box h4{color:var(--talento);font-size:.88rem;font-weight:800;margin-bottom:6px}
 
+/* CSS RESTAURADO PARA EL FLIPBOOK (LIBRO 3D) */
 .preview-scroll{padding:20px;overflow-y:auto;max-height:calc(100vh - 200px)}
+.flipbook-wrap{padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;overflow-y:auto;max-height:calc(100vh - 200px)}
+#flipbook{width:100%;max-width:900px;height:600px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(15,23,42,.18);overflow:hidden}
+.flipbook-controls{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.flipbook-controls .page-indicator{font-size:.85rem;font-weight:700;color:var(--azul);min-width:100px;text-align:center}
+.page-content{padding:28px;background:#fff;height:100%;overflow-y:auto;font-size:.9rem;line-height:1.65}
+.page-content h3{color:var(--azul);font-size:1.15rem;font-weight:800;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--azul-claro)}
+.page-content .page-cover{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;background:linear-gradient(160deg,#0f172a,#1e293b);color:#fff;margin:-28px;padding:40px 24px}
+.page-content .page-cover h2{font-size:1.6rem;font-weight:800;margin-bottom:8px}
+
 .book-cover-preview{background:linear-gradient(160deg,#0f172a,#1e293b 50%,#334155);border-radius:14px;padding:40px 24px;text-align:center;color:#fff;margin-bottom:20px;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
 .book-cover-preview.has-img{padding:0;min-height:220px}
 .book-cover-preview.has-img img{width:100%;height:220px;object-fit:cover;border-radius:14px}
@@ -334,6 +344,7 @@ button,input,select,textarea{font-family:inherit}
         <button class="btn btn-verde btn-mini" id="btnPublish" type="button">🚀 Publish</button>
         <button class="btn btn-rojo btn-mini" id="btnDelete" type="button" style="display:none">🗑 Delete</button>
         <div class="spacer"></div>
+        <!-- BOTÓN PARA CAMBIAR A MODO LIBRO -->
         <button class="btn btn-ghost btn-mini" id="btnTogglePreviewMode" type="button">📖 Libro</button>
         <div class="mode-toggle">
           <button type="button" class="active" data-mode="edit">✏️ Edit</button>
@@ -414,10 +425,21 @@ button,input,select,textarea{font-family:inherit}
             </div>
           </div>
         </div>
+        
+        <!-- AQUÍ ESTÁ EL CAMBIO: Añadido el contenedor del libro 3D -->
         <div class="panel preview-panel">
           <div class="panel-header" id="previewHeader">👁 Preview</div>
           <div class="preview-scroll" id="previewArea"></div>
+          <div class="flipbook-wrap" id="flipbookWrap" style="display:none">
+            <div id="flipbook"></div>
+            <div class="flipbook-controls">
+              <button type="button" class="btn btn-ghost btn-mini" id="flipPrev">← Anterior</button>
+              <span class="page-indicator" id="flipIndicator">1 / 1</span>
+              <button type="button" class="btn btn-ghost btn-mini" id="flipNext">Siguiente →</button>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   </main>
@@ -620,6 +642,7 @@ let activeChapterIdx = 0;
 let viewMode = 'edit';
 let previewMode = 'scroll'; 
 let pendingImport = null;
+let flipbookInstance = null; // <-- VARIABLE RESTAURADA
 
 function uid(){ return 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function defaultReader(){ return { id:uid(), title:'', level:'B1', coverImage:null, characters:[], keywords:[], chapters:[defaultChapter(1)], status:'draft', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() }; }
@@ -837,7 +860,6 @@ async function publishReader(){
   catch(e){ toast('Publish failed','error'); }
 }
 
-// DELETE BUTTON FIX
 async function deleteReader(){
   if(!confirm('Delete this Reader?')) return;
   try { await deleteReaderDB(currentId); } catch(e){ toast('Delete failed','error'); return; }
@@ -954,11 +976,27 @@ function setupImg(zoneId,inputId,previewId,imgId,removeId,onSet){
   document.getElementById(removeId).onclick=e=>{ e.stopPropagation(); onSet(null); img.src=''; preview.style.display='none'; input.value=''; markDirty(); };
 }
 
+// === VISTA PREVIA Y FLIPBOOK ===
 function updatePreview(){
   collectFromForm();
   const r=getCurrent();
   const scrollArea = document.getElementById('previewArea');
+  const flipWrap = document.getElementById('flipbookWrap');
+  
   if(!r){ scrollArea.innerHTML=''; return; }
+
+  if(previewMode === 'flipbook'){ 
+    scrollArea.style.display='none'; 
+    flipWrap.style.display='flex'; 
+    renderFlipbook(r); 
+    return; 
+  }
+  
+  scrollArea.style.display='block'; 
+  flipWrap.style.display='none';
+  
+  if(flipbookInstance){ try{ flipbookInstance.destroy(); }catch(e){} flipbookInstance=null; }
+
   let html='';
   if(r.coverImage) html+='<div class="book-cover-preview has-img"><img src="'+r.coverImage+'" alt=""><h2 style="position:absolute;bottom:20px;left:20px;text-shadow:0 2px 5px #000;">'+escapeHtml(r.title||'Untitled')+'</h2></div>';
   else html+='<div class="book-cover-preview"><h2>'+escapeHtml(r.title||'Untitled')+'</h2></div>';
@@ -973,7 +1011,64 @@ function updatePreview(){
   scrollArea.innerHTML=html;
 }
 
-// === IMPORT LÓGICA (RESTAURADA) ===
+// LÓGICA DEL BOTÓN LIBRO
+document.getElementById('btnTogglePreviewMode').onclick = () => {
+  previewMode = previewMode === 'scroll' ? 'flipbook' : 'scroll';
+  document.getElementById('btnTogglePreviewMode').textContent = previewMode === 'scroll' ? '📖 Libro' : '📜 Scroll';
+  updatePreview();
+};
+
+// LÓGICA PARA CONSTRUIR LAS PÁGINAS DEL LIBRO 3D
+function buildPageContent(r, ch, i){
+  let html = '<div class="page-content">';
+  if(!ch){
+    html += '<div class="page-cover">';
+    if(r.coverImage) html += '<img src="'+r.coverImage+'" style="width:160px;height:210px;object-fit:cover;border-radius:10px;margin-bottom:16px">';
+    html += '<h2>'+escapeHtml(r.title||'Untitled')+'</h2>';
+    html += '<span style="background:var(--acento);color:#1f2937;font-weight:800;font-size:.75rem;padding:4px 12px;border-radius:50px;margin-top:8px">'+r.level+'</span>';
+    html += '</div>';
+  } else {
+    html += '<h3>'+escapeHtml(ch.title||('Chapter '+(i+1)))+'</h3>';
+    if(ch.image) html += '<img src="'+ch.image+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
+    html += '<div style="white-space:pre-wrap;font-size:.88rem;line-height:1.6">'+escapeHtml(ch.text||'(No text yet)')+'</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderFlipbook(r){
+  const container = document.getElementById('flipbook');
+  container.innerHTML = '';
+  const pages = [];
+  pages.push(buildPageContent(r, null, 0));
+  r.chapters.forEach((ch, i) => pages.push(buildPageContent(r, ch, i)));
+  
+  container.innerHTML = pages.map(html => '<div class="page">'+html+'</div>').join('');
+  
+  const total = pages.length;
+  document.getElementById('flipIndicator').textContent = '1 / '+total;
+  
+  try{
+    const pageFlip = new St.PageFlip(container, {
+      width: 450, height: 600, size: 'stretch', minWidth: 300, maxWidth: 900, minHeight: 400, maxHeight: 800,
+      drawShadow: true, flippingTime: 800, usePortrait: true, showCover: true, autoSize: true
+    });
+    pageFlip.loadFromHTML(container.querySelectorAll('.page'));
+    flipbookInstance = pageFlip;
+    
+    pageFlip.on('flip', (e) => {
+      document.getElementById('flipIndicator').textContent = (e.data + 1) + ' / ' + total;
+    });
+    
+    document.getElementById('flipPrev').onclick = () => pageFlip.flipPrev();
+    document.getElementById('flipNext').onclick = () => pageFlip.flipNext();
+  }catch(err){
+    console.error('Flipbook error:', err);
+    toast('No se pudo iniciar el modo libro','error');
+  }
+}
+
+// === IMPORT ===
 let importText='';
 const importZone=document.getElementById('importZone'), importInput=document.getElementById('importInput');
 importZone.onclick=()=>importInput.click();
@@ -1101,7 +1196,6 @@ document.getElementById('btnImportConfirm').onclick=async()=>{
   toast('Import applied to panel');
   pendingImport=null;
 };
-// ===================================
 
 document.getElementById('btnRecord').onclick=async()=>{
   if(!navigator.mediaDevices?.getUserMedia){ toast('Microphone not available','error'); return; }
